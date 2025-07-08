@@ -35,7 +35,6 @@ class EmailProvider with ChangeNotifier {
   }
 
   Future<void> _initializeProvider() async {
-    await _loadDeviceId();
     await loadSavedEmails();
     await loadDomains();
     await loadGeneratedEmails();
