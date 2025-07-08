@@ -2,6 +2,7 @@
 
 exports.register = function () {
     this.loginfo('Body plugin loaded');
+    this.register_hook('data_post', 'hook_data_post');
 };
 
 exports.hook_data_post = function (next, connection) {

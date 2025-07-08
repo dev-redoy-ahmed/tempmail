@@ -12,19 +12,35 @@ exports.hook_queue = function (next, connection) {
     return next();
   }
 
-  // Get body content from body plugin notes or fallback to direct body access
+  // Get body content from transaction body
   let bodyText = '';
   let htmlContent = '';
   
-  if (txn.notes && txn.notes.email_body) {
-    // Use content extracted by body plugin
-    bodyText = txn.notes.email_body.text_content || '';
-    htmlContent = txn.notes.email_body.html_content || '';
-    this.loginfo('📧 Using body content from body plugin');
-  } else if (txn.body) {
-    // Fallback to direct body access
-    bodyText = txn.body.bodytext || '';
-    this.loginfo('📧 Using fallback body content');
+  if (txn.body) {
+    this.loginfo('📧 Processing email body...');
+    
+    // Check if body has children (multipart)
+    if (txn.body.children && txn.body.children.length > 0) {
+      this.loginfo(`📧 Multipart email with ${txn.body.children.length} parts`);
+      
+      txn.body.children.forEach((part, index) => {
+        this.loginfo(`📧 Part ${index}: ${part.ct_type}`);
+        
+        if (part.ct_type === 'text/plain' && part.bodytext) {
+          bodyText = part.bodytext;
+          this.loginfo(`📧 Found text content: ${bodyText.substring(0, 100)}...`);
+        } else if (part.ct_type === 'text/html' && part.bodytext) {
+          htmlContent = part.bodytext;
+          this.loginfo(`📧 Found HTML content: ${htmlContent.substring(0, 100)}...`);
+        }
+      });
+    } else if (txn.body.bodytext) {
+      // Single part email
+      bodyText = txn.body.bodytext;
+      this.loginfo(`📧 Single part email: ${bodyText.substring(0, 100)}...`);
+    }
+  } else {
+    this.logwarn('📧 No body found in transaction');
   }
 
   const mail = {
