@@ -233,7 +233,12 @@ app.post('/api/receive-mail', authKey, async (req, res) => {
     console.log('📡 Mail sent to frontend via socket');
     
     // 🗄️ STEP 2: Save to main Email collection
-    await Email.create(mail);
+    // Ensure 'to' field is a string for MongoDB schema compatibility
+    const mailForDB = {
+      ...mail,
+      to: Array.isArray(mail.to) ? mail.to.join(', ') : mail.to
+    };
+    await Email.create(mailForDB);
     dbSaved = true;
     console.log('💾 Mail saved to main database');
     
