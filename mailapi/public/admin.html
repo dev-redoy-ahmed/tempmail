@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RedsMail Admin Panel</title>
+    <link rel="stylesheet" href="admin.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-envelope"></i>
+                <span>RedsMail Admin</span>
+            </div>
+            <div class="header-actions">
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span>Administrator</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <nav class="sidebar-nav">
+            <ul>
+                <li class="nav-item active" data-page="dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </li>
+                <li class="nav-item" data-page="domains">
+                    <i class="fas fa-globe"></i>
+                    <span>Manage Domains</span>
+                </li>
+                <li class="nav-item" data-page="emails">
+                    <i class="fas fa-inbox"></i>
+                    <span>Email Monitor</span>
+                </li>
+                <li class="nav-item" data-page="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Dashboard Page -->
+        <div id="dashboard" class="page active">
+            <div class="page-header">
+                <h1>Dashboard</h1>
+                <p>Welcome to RedsMail Administration Panel</p>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="total-emails">0</h3>
+                        <p>Total Emails</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="total-domains">0</h3>
+                        <p>Active Domains</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="active-users">0</h3>
+                        <p>Active Users</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Domain Management Page -->
+        <div id="domains" class="page">
+            <div class="page-header">
+                <h1>Manage Domains</h1>
+                <p>Add or remove domains from Haraka host list</p>
+            </div>
+            <div class="domain-actions">
+                <div class="add-domain-form">
+                    <input type="text" id="new-domain" placeholder="Enter domain name (e.g., example.com)">
+                    <button id="add-domain-btn" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Domain
+                    </button>
+                </div>
+            </div>
+            <div class="domains-list">
+                <div class="list-header">
+                    <h3>Current Domains</h3>
+                    <button id="refresh-domains" class="btn btn-secondary">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+                <div id="domains-container" class="domains-container">
+                    <!-- Domains will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Email Monitor Page -->
+        <div id="emails" class="page">
+            <div class="page-header">
+                <h1>Email Monitor</h1>
+                <p>Real-time email monitoring</p>
+            </div>
+            <div id="email-list" class="email-list">
+                <!-- Real-time emails will appear here -->
+            </div>
+        </div>
+
+        <!-- Settings Page -->
+        <div id="settings" class="page">
+            <div class="page-header">
+                <h1>Settings</h1>
+                <p>System configuration and API testing</p>
+            </div>
+            <div class="settings-content">
+                <div class="setting-group">
+                    <h3>API Configuration</h3>
+                    <div class="setting-item">
+                        <label>Current API Key:</label>
+                        <div class="api-key-container">
+                            <input type="password" id="current-api-key" readonly>
+                            <button id="show-api-key" class="btn btn-secondary">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label>New API Key:</label>
+                        <div class="api-key-container">
+                            <input type="text" id="new-api-key" placeholder="Enter new API key">
+                            <button id="update-api-key" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Update
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="setting-group">
+                    <h3>API Testing</h3>
+                    <div class="api-test-section">
+                        <div class="test-controls">
+                            <button id="test-all-apis" class="btn btn-primary">
+                                <i class="fas fa-play"></i> Test All APIs
+                            </button>
+                            <button id="clear-test-results" class="btn btn-secondary">
+                                <i class="fas fa-trash"></i> Clear Results
+                            </button>
+                        </div>
+                        <div id="api-test-results" class="api-test-results">
+                            <!-- Test results will appear here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="setting-group">
+                    <h3>System Information</h3>
+                    <div class="system-info">
+                        <div class="info-item">
+                            <label>Server Status:</label>
+                            <span id="server-status" class="status-badge">Running</span>
+                        </div>
+                        <div class="info-item">
+                            <label>MongoDB Status:</label>
+                            <span id="mongodb-status" class="status-badge">Connected</span>
+                        </div>
+                        <div class="info-item">
+                            <label>WebSocket Status:</label>
+                            <span id="websocket-status" class="status-badge">Connected</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Haraka Integration:</label>
+                            <span id="haraka-status" class="status-badge">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2024 RedsMail Admin Panel. All rights reserved.</p>
+            <div class="footer-links">
+                <span>Version 1.0.0</span>
+                <span>|</span>
+                <span>Status: <span class="status-indicator online">Online</span></span>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>
