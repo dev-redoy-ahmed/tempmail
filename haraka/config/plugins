@@ -54,6 +54,7 @@ rcpt_to.in_host_list
 # DATA
 # ----------
 # attachment
+body
 # bounce
 # clamd
 # dkim

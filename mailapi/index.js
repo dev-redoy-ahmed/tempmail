@@ -118,7 +118,13 @@ const EmailSchema = new mongoose.Schema({
   to: String,
   subject: String,
   body: String,
+  html: String,
   date: String,
+  headers: {
+    messageId: String,
+    contentType: String,
+    mimeVersion: String
+  }
 });
 const Email = mongoose.model('Email', EmailSchema);
 
@@ -132,7 +138,13 @@ const DeviceEmailSchema = new mongoose.Schema({
   from: String,
   subject: String,
   body: String,
-  receivedAt: Date
+  html: String,
+  receivedAt: Date,
+  headers: {
+    messageId: String,
+    contentType: String,
+    mimeVersion: String
+  }
 });
 const DeviceEmail = mongoose.model('DeviceEmail', DeviceEmailSchema);
 
@@ -241,7 +253,13 @@ app.post('/api/receive-mail', authKey, async (req, res) => {
         from: mail.from,
         subject: mail.subject,
         body: mail.body,
-        receivedAt: new Date(mail.date)
+        html: mail.html || '',
+        receivedAt: new Date(mail.date),
+        headers: {
+          messageId: mail.headers?.['message-id'] || '',
+          contentType: mail.headers?.['content-type'] || '',
+          mimeVersion: mail.headers?.['mime-version'] || ''
+        }
       })
     );
     

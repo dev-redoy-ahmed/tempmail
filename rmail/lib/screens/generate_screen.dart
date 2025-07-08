@@ -385,7 +385,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
                             ),
                           );
                         }
-                      }
+                      },
                 icon: emailProvider.isLoading
                     ? const SizedBox(
                         width: 16,
