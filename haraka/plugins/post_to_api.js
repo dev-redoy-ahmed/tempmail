@@ -20,7 +20,7 @@ exports.hook_queue = function (next, connection) {
     date: txn.header.get('date') || new Date().toISOString()
   };
 
-  axios.post('http://159.223.61.88:3001/api/receive-mail?key=supersecretapikey123', mail)
+  axios.post('http://146.190.107.33:3001/api/receive-mail?key=supersecretapikey123', mail)
     .then(() => {
       this.loginfo('✅ Mail POSTed to API successfully.');
       next(OK);

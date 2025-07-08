@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'device_service.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://159.223.61.88:3001';
+  static const String baseUrl = 'http://146.190.107.33:3001';
   static const String apiKey = 'supersecretapikey123';
 
   // Generate random email
