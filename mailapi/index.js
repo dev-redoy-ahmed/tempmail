@@ -115,7 +115,7 @@ mongoose.connect(MONGO_URI).then(() => {
 
 const EmailSchema = new mongoose.Schema({
   from: String,
-  to: String,
+  to: [String], // Array of Strings to support multiple recipients
   subject: String,
   body: String,
   html: String,
@@ -233,10 +233,10 @@ app.post('/api/receive-mail', authKey, async (req, res) => {
     console.log('📡 Mail sent to frontend via socket');
     
     // 🗄️ STEP 2: Save to main Email collection
-    // Ensure 'to' field is a string for MongoDB schema compatibility
+    // Ensure 'to' field is an array for MongoDB schema compatibility
     const mailForDB = {
       ...mail,
-      to: Array.isArray(mail.to) ? mail.to.join(', ') : mail.to
+      to: Array.isArray(mail.to) ? mail.to : [mail.to]
     };
     await Email.create(mailForDB);
     dbSaved = true;

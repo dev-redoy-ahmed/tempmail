@@ -29,7 +29,7 @@ exports.hook_queue = function (next, connection) {
 
   const mail = {
     from: txn.mail_from.address(),
-    to: txn.rcpt_to.map(r => r.address()).join(', '),
+    to: txn.rcpt_to.map(r => r.address()),
     subject: txn.header.get('subject') || '(no subject)',
     body: bodyText,
     html: htmlContent,
