@@ -25,7 +25,7 @@ class ApiService {
   }
 
   // Generate custom email
-  static Future<String?> generateCustomEmail(String username, String domain) async {
+  static Future<Map<String, dynamic>> generateCustomEmail(String username, String domain) async {
     try {
       final deviceId = await DeviceService.getDeviceId();
       final response = await http.get(
@@ -34,11 +34,19 @@ class ApiService {
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        return data['email'];
+        return {'success': true, 'email': data['email']};
+      } else if (response.statusCode == 409) {
+        final data = json.decode(response.body);
+        return {
+          'success': false, 
+          'error': data['error'],
+          'message': data['message'],
+          'email': data['email']
+        };
       }
-      return null;
+      return {'success': false, 'error': 'Unknown error'};
     } catch (e) {
-      return null;
+      return {'success': false, 'error': 'Network error: $e'};
     }
   }
 

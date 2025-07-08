@@ -145,25 +145,34 @@ class EmailProvider with ChangeNotifier {
     _setLoading(false);
   }
 
-  Future<void> generateCustomEmail(String username, String domain) async {
+  Future<Map<String, dynamic>> generateCustomEmail(String username, String domain) async {
     _setLoading(true);
     _clearError();
     
     try {
-      final email = await ApiService.generateCustomEmail(username, domain);
-      if (email != null) {
-        _currentEmail = email;
+      final result = await ApiService.generateCustomEmail(username, domain);
+      if (result['success'] == true) {
+        _currentEmail = result['email'];
         await _saveEmailToPrefs(_currentEmail!);
         await loadGeneratedEmails(); // Refresh generated emails list
         await refreshInbox();
+        _setLoading(false);
+        return {'success': true, 'email': result['email']};
       } else {
-        _error = 'Failed to generate custom email';
+        _error = result['message'] ?? result['error'] ?? 'Failed to generate custom email';
+        _setLoading(false);
+        return {
+          'success': false, 
+          'error': result['error'],
+          'message': result['message'],
+          'email': result['email']
+        };
       }
     } catch (e) {
       _error = 'Error: $e';
+      _setLoading(false);
+      return {'success': false, 'error': 'Network error: $e'};
     }
-    
-    _setLoading(false);
   }
 
 

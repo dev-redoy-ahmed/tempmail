@@ -363,10 +363,29 @@ class _GenerateScreenState extends State<GenerateScreen> {
                         _usernameController.text.isEmpty ||
                         _selectedDomain == null
                     ? null
-                    : () => emailProvider.generateCustomEmail(
+                    : () async {
+                        final result = await emailProvider.generateCustomEmail(
                           _usernameController.text,
                           _selectedDomain!,
-                        ),
+                        );
+                        
+                        if (!result['success'] && mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                result['message'] ?? result['error'] ?? 'Failed to create email'
+                              ),
+                              backgroundColor: Colors.orange,
+                              duration: const Duration(seconds: 4),
+                              action: SnackBarAction(
+                                label: 'OK',
+                                textColor: Colors.white,
+                                onPressed: () {},
+                              ),
+                            ),
+                          );
+                        }
+                      }
                 icon: emailProvider.isLoading
                     ? const SizedBox(
                         width: 16,
