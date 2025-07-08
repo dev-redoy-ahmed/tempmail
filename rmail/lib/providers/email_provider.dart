@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../models/email_model.dart';
 import '../services/api_service.dart';
 import '../services/device_service.dart';
@@ -11,9 +13,10 @@ class EmailProvider with ChangeNotifier {
   List<String> _availableDomains = [];
   List<Map<String, dynamic>> _generatedEmails = [];
   List<Map<String, dynamic>> _receivedEmails = [];
-  String? _deviceId;
   bool _isLoading = false;
   String? _error;
+  IO.Socket? _socket;
+  bool _isSocketConnected = false;
 
   // Getters
   String? get currentEmail => _currentEmail;
@@ -22,12 +25,13 @@ class EmailProvider with ChangeNotifier {
   List<String> get domains => _availableDomains;
   List<Map<String, dynamic>> get generatedEmails => _generatedEmails;
   List<Map<String, dynamic>> get receivedEmails => _receivedEmails;
-  String? get deviceId => _deviceId;
+  bool get isSocketConnected => _isSocketConnected;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
   EmailProvider() {
     _initializeProvider();
+    _initSocketConnection();
   }
 
   Future<void> _initializeProvider() async {
@@ -38,15 +42,7 @@ class EmailProvider with ChangeNotifier {
     await loadReceivedEmails();
   }
 
-  Future<void> _loadDeviceId() async {
-    try {
-      _deviceId = await DeviceService.getDeviceId();
-      notifyListeners();
-    } catch (e) {
-      _error = 'Failed to get device ID: $e';
-      notifyListeners();
-    }
-  }
+
 
   // Load saved emails from SharedPreferences
   Future<void> _loadSavedEmails() async {
@@ -395,5 +391,72 @@ class EmailProvider with ChangeNotifier {
 
   void clearError() {
     _clearError();
+  }
+
+  // Initialize Socket.IO connection
+  void _initSocketConnection() {
+    try {
+      _socket = IO.io('http://178.128.222.199:3001', <String, dynamic>{
+        'transports': ['websocket'],
+        'autoConnect': false,
+      });
+
+      _socket!.connect();
+
+      _socket!.onConnect((_) {
+        print('Socket.IO connected');
+        _isSocketConnected = true;
+        notifyListeners();
+      });
+
+      _socket!.onDisconnect((_) {
+        print('Socket.IO disconnected');
+        _isSocketConnected = false;
+        notifyListeners();
+      });
+
+      _socket!.on('new_mail', (data) {
+        print('New mail received: $data');
+        _handleNewMail(data);
+      });
+
+      _socket!.onError((error) {
+        print('Socket.IO error: $error');
+      });
+    } catch (e) {
+      print('Socket.IO initialization error: $e');
+    }
+  }
+
+  // Handle new mail from Socket.IO
+  void _handleNewMail(dynamic mailData) {
+    try {
+      if (_currentEmail != null && mailData != null) {
+        // Check if this email is for current user
+        final toEmail = mailData['to'];
+        if (toEmail != null && toEmail.toString().contains(_currentEmail!)) {
+          final newEmail = EmailModel.fromJson(mailData);
+          _emails.insert(0, newEmail);
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      print('Error handling new mail: $e');
+    }
+  }
+
+  // Disconnect Socket.IO
+  void _disconnectSocket() {
+    if (_socket != null) {
+      _socket!.disconnect();
+      _socket = null;
+      _isSocketConnected = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _disconnectSocket();
+    super.dispose();
   }
 }

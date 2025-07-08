@@ -12,7 +12,24 @@ class InboxScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Inbox'),
+        title: Row(
+          children: [
+            const Text('Inbox'),
+            const SizedBox(width: 8),
+            Consumer<EmailProvider>(
+              builder: (context, emailProvider, child) {
+                return Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: emailProvider.isSocketConnected ? Colors.green : Colors.red,
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
         actions: [
           Consumer<EmailProvider>(
             builder: (context, emailProvider, child) {
