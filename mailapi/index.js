@@ -16,7 +16,7 @@ const io = new Server(server, {
 
 // === CONFIG ===
 const PORT = 3001;
-const MONGO_URI = 'mongodb://localhost:27017/temp-mail';
+const MONGO_URI = 'mongodb+srv://tempmail:we1we2we3@turbomail.gjohjma.mongodb.net/temp-mail?retryWrites=true&w=majority&appName=turbomail';
 let API_KEY = 'supersecretapikey123'; // Made mutable for updates
 const ALLOWED_DOMAINS = ['oplex.online', 'worldwides.help', 'agrovia.store'];
 const HARAKA_HOST_LIST_PATH = path.join(__dirname, '../haraka/config/host_list');
