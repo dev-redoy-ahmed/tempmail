@@ -9,42 +9,12 @@ exports.hook_data_post = function (next, connection) {
     const plugin = this;
     const transaction = connection.transaction;
     
-    plugin.loginfo('🔍 Body plugin: Processing email body...');
-    console.log('🔍 Body plugin: Processing email body...');
-    
-    if (!transaction) {
-        plugin.logwarn('No transaction found');
+    if (!transaction || !transaction.message_stream) {
+        plugin.logwarn('No transaction or message stream found');
         return next();
     }
 
-    // Parse the message body from message_stream
-    if (transaction.message_stream) {
-        try {
-            const messageData = transaction.message_stream.get_data();
-            if (messageData) {
-                const messageString = messageData.toString();
-                plugin.loginfo(`📧 Raw message data: ${messageString.substring(0, 200)}...`);
-                
-                // Simple body extraction - find content after headers
-                const headerEndIndex = messageString.indexOf('\r\n\r\n');
-                if (headerEndIndex !== -1) {
-                    const bodyContent = messageString.substring(headerEndIndex + 4);
-                    plugin.loginfo(`📧 Extracted body: ${bodyContent.substring(0, 100)}...`);
-                    
-                    // Store body in transaction for other plugins
-                    if (!transaction.notes) transaction.notes = {};
-                    transaction.notes.email_body = {
-                        text_content: bodyContent,
-                        raw_content: bodyContent
-                    };
-                }
-            }
-        } catch (err) {
-            plugin.logwarn(`📧 Error parsing message stream: ${err.message}`);
-        }
-    }
-
-    // Get the email body (if already parsed)
+    // Get the email body
     const body = transaction.body;
     
     if (body) {
@@ -69,7 +39,6 @@ exports.hook_data_post = function (next, connection) {
         }
         
         // Store body content in transaction notes for other plugins
-        if (!transaction.notes) transaction.notes = {};
         transaction.notes.email_body = {
             full_body: body,
             text_content: extractTextContent(body),
