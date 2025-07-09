@@ -1,11 +1,11 @@
 const axios = require('axios');
 
-exports.register = function () {
+exports.register = function() {
   this.loginfo('📧 Post to API plugin loaded');
-  this.register_hook('data_post', 'hook_data_post');
+  this.register_hook('data', 'hook_data');
 };
 
-exports.hook_data_post = function(next, connection, data) {
+exports.hook_data = function(next, connection, data) {
   const plugin = this;
   const txn = connection.transaction;
   
@@ -13,8 +13,8 @@ exports.hook_data_post = function(next, connection, data) {
     // Simple raw email data capture
     plugin.loginfo('📧 Capturing raw email data...');
     
-    // Get raw email data from data_lines
-    const rawEmailData = txn.data_lines ? txn.data_lines.join('\n') : '';
+    // Get raw email data from data parameter (complete email content)
+     const rawEmailData = data ? data.toString() : '';
     
     // Extract basic headers
     const headers = {};
