@@ -1,128 +1,77 @@
-const axios = require('axios');
+const { simpleParser } = require('mailparser');
+const http = require('http');
 
 exports.register = function() {
   this.loginfo('📧 Post to API plugin loaded');
-  this.register_hook('data_line', 'hook_data_line');
   this.register_hook('data', 'hook_data');
+  this.register_hook('data_line', 'hook_data_line');
+  this.register_hook('data_post', 'hook_data_post');
 };
 
-// Capture email data line by line
-exports.hook_data_line = function(next, connection, line) {
-  const plugin = this;
-  const txn = connection.transaction;
-  
-  // Initialize email_lines array if not exists
-  if (!txn.notes.email_lines) {
-    txn.notes.email_lines = [];
-  }
-  
-  // Store each line
-  txn.notes.email_lines.push(line);
-  
-  next();
+exports.hook_data = function (next, connection) {
+    connection.notes.email_data = [];
+    next();
 };
 
-exports.hook_data = function(next, connection, data) {
-  const plugin = this;
-  const txn = connection.transaction;
-  
-  try {
-    // Simple raw email data capture
-    plugin.loginfo('📧 Capturing raw email data...');
-    
-    // Get raw email data from captured lines
-     const rawEmailData = txn.notes.email_lines ? txn.notes.email_lines.join('\n') : '';
-     
-     plugin.loginfo(`📊 Captured ${txn.notes.email_lines ? txn.notes.email_lines.length : 0} email lines`);
-    
-    // Extract basic headers
-    const headers = {};
-    if (txn.header && txn.header.headers) {
-      Object.keys(txn.header.headers).forEach(key => {
-        headers[key] = txn.header.get(key);
-      });
-    }
-    
-    // Extract body from raw email data
-    let body = '';
-    let html = '';
-    
-    if (rawEmailData) {
-      const lines = rawEmailData.split('\n');
-      let inBody = false;
-      let bodyLines = [];
-      
-      // Find where headers end and body begins
-      for (let i = 0; i < lines.length; i++) {
-        if (lines[i].trim() === '' && !inBody) {
-          inBody = true;
-          continue;
-        }
-        if (inBody) {
-          bodyLines.push(lines[i]);
-        }
-      }
-      
-      body = bodyLines.join('\n').trim();
-      
-      // Check if it's HTML content
-      if (body.includes('<html') || body.includes('<!DOCTYPE') || body.includes('<body')) {
-        html = body;
-      }
-    }
-    
-    // Create email data object compatible with API schema
-    const emailData = {
-      // Basic email info
-      from: txn.mail_from ? txn.mail_from.address() : '',
-      to: txn.rcpt_to ? txn.rcpt_to.map(r => r.address()) : [],
-      subject: txn.header ? (txn.header.get('subject') || '(no subject)') : '(no subject)',
-      date: txn.header ? (txn.header.get('date') || new Date().toISOString()) : new Date().toISOString(),
-      
-      // Email content
-      body: body,
-      html: html,
-      
-      // Headers (compatible with API schema)
-      headers: {
-        messageId: headers['message-id'] || '',
-        contentType: headers['content-type'] || '',
-        mimeVersion: headers['mime-version'] || ''
-      },
-      
-      // Raw email data for debugging
-      rawEmailData: rawEmailData
-    };
-    
-    // Log basic info
-    plugin.loginfo(`📧 Email captured:`);
-    plugin.loginfo(`From: ${emailData.from}`);
-    plugin.loginfo(`To: ${emailData.to.join(', ')}`);
-    plugin.loginfo(`Subject: ${emailData.subject}`);
-    plugin.loginfo(`Body length: ${body.length} characters`);
-    plugin.loginfo(`HTML length: ${html.length} characters`);
-    plugin.loginfo(`Raw data length: ${rawEmailData.length} characters`);
-    
-    // Log content preview for debugging
-    if (body) {
-      plugin.loginfo(`📄 Body preview: ${body.substring(0, 200)}...`);
-    }
-    if (html) {
-      plugin.loginfo(`🌐 HTML preview: ${html.substring(0, 200)}...`);
-    }
-    
-    // Send raw data to API
-    axios.post('http://178.128.222.199:3001/api/receive-mail?key=supersecretapikey123', emailData)
-      .then(response => {
-        plugin.loginfo(`✅ Raw email data sent to API successfully: ${response.status}`);
-      })
-      .catch(error => {
-        plugin.logerror(`❌ Failed to send email data to API: ${error.message}`);
-      });
-    
-  } catch (error) {
-    plugin.logerror(`💥 Error in data_post hook: ${error.message}`);
-  }
-  
-  next();
+exports.hook_data_line = function (next, connection, line) {
+    connection.notes.email_data.push(line);
+    next();
+};
+
+exports.hook_data_post = function (next, connection) {
+    const raw = connection.notes.email_data.join('\n');
+    console.log("📊 Captured", connection.notes.email_data.length, "email lines");
+
+    simpleParser(raw)
+        .then(parsed => {
+            const from = parsed.from?.text || '';
+            const to = parsed.to?.text || '';
+            const subject = parsed.subject || '';
+            const text = parsed.text || '';
+            const html = parsed.html || '';
+
+            console.log("📨 Parsed email:");
+            console.log("From:", from);
+            console.log("To:", to);
+            console.log("Subject:", subject);
+            console.log("Text length:", text.length);
+            console.log("HTML length:", html.length);
+
+            const payload = JSON.stringify({
+                from,
+                to,
+                subject,
+                body: text,
+                html: html,
+                date: new Date().toISOString(),
+                headers: {
+                    'message-id': parsed.messageId || '',
+                    'content-type': parsed.headers.get('content-type') || ''
+                }
+            });
+
+            const req = http.request({
+                hostname: '178.128.222.199',
+                port: 3001,
+                path: '/api/receive-mail',
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Content-Length': payload.length
+                }
+            });
+
+            req.write(payload);
+            req.end();
+
+            req.on('error', err => {
+                console.error('❌ API POST error:', err);
+            });
+
+            next();
+        })
+        .catch(err => {
+            console.error('❌ Error parsing email:', err);
+            next();
+        });
 };

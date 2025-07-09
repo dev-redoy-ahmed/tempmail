@@ -5,6 +5,7 @@
   "dependencies": {
     "axios": "^1.10.0",
     "haraka": "^0.0.33",
+    "mailparser": "^3.7.4",
     "nodemailer": "^7.0.5"
   },
   "repository": "",
