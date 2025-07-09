@@ -1,4 +1,3 @@
 mail_from.is_resolvable
 rcpt_to.in_host_list
-body
 post_to_api

@@ -16,20 +16,27 @@ exports.hook_queue = function (next, connection) {
   let bodyText = '';
   let htmlContent = '';
 
-  // Prefer notes from body plugin
-  if (txn.notes.email_body) {
-    plugin.loginfo('✅ Using txn.notes.email_body');
-    bodyText = txn.notes.email_body.text_content || '';
-    htmlContent = txn.notes.email_body.html_content || '';
-  } else if (txn.body) {
-    plugin.loginfo('✅ Using txn.body fallback');
+  // Extract body content directly from txn.body
+  if (txn.body) {
+    plugin.loginfo('✅ Extracting body content directly from txn.body');
+    
+    // Handle multipart messages
     if (txn.body.children && txn.body.children.length > 0) {
       txn.body.children.forEach(part => {
-        if (part.ct_type === 'text/plain' && part.bodytext) bodyText = part.bodytext;
-        if (part.ct_type === 'text/html' && part.bodytext) htmlContent = part.bodytext;
+        if (part.ct_type === 'text/plain' && part.bodytext) {
+          bodyText = part.bodytext;
+          plugin.loginfo(`📄 Text part found: ${bodyText.substring(0, 100)}...`);
+        }
+        if (part.ct_type === 'text/html' && part.bodytext) {
+          htmlContent = part.bodytext;
+          plugin.loginfo(`🌐 HTML part found: ${htmlContent.substring(0, 100)}...`);
+        }
       });
-    } else if (txn.body.bodytext) {
+    } 
+    // Handle single part messages
+    else if (txn.body.bodytext) {
       bodyText = txn.body.bodytext;
+      plugin.loginfo(`📝 Single part body found: ${bodyText.substring(0, 100)}...`);
     }
   } else {
     plugin.logwarn('⚠️ No body found in transaction.');
