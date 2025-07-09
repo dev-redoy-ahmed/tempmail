@@ -49,21 +49,45 @@ exports.hook_queue = function (next, connection) {
     plugin.loginfo(`📧 Body found in notes - Text: ${bodyText.length} chars, HTML: ${htmlContent.length} chars`);
     processEmailData(bodyText, htmlContent);
   }
-  else if (txn.message_stream && typeof txn.message_stream.on === 'function') {
+  else if (txn.message_stream && typeof txn.message_stream.on === 'function' && !txn.message_stream.destroyed) {
     plugin.loginfo('📧 Parsing email from message_stream with mailparser...');
     
     let rawEmailData = '';
+    let streamEnded = false;
+    let streamTimeout;
+
+    // Set a timeout to prevent hanging
+    streamTimeout = setTimeout(() => {
+      if (!streamEnded) {
+        plugin.logwarn('📧 message_stream timeout, falling back to direct body access');
+        streamEnded = true;
+        fallbackDirectBody();
+      }
+    }, 10000); // 10 second timeout
 
     txn.message_stream.on('data', (chunk) => {
-      if (chunk) {
-        rawEmailData += chunk.toString();
+      try {
+        if (chunk && !streamEnded) {
+          rawEmailData += chunk.toString();
+        }
+      } catch (err) {
+        plugin.logerror(`❌ Error processing message_stream chunk: ${err.message}`);
+        if (!streamEnded) {
+          streamEnded = true;
+          clearTimeout(streamTimeout);
+          fallbackDirectBody();
+        }
       }
     });
 
     txn.message_stream.on('end', () => {
+      if (streamEnded) return;
+      streamEnded = true;
+      clearTimeout(streamTimeout);
+      
       if (!rawEmailData) {
         plugin.logwarn('📧 message_stream ended but no data found.');
-        return processEmailData('', '');
+        return fallbackDirectBody();
       }
 
       simpleParser(rawEmailData)
@@ -81,6 +105,9 @@ exports.hook_queue = function (next, connection) {
     });
 
     txn.message_stream.on('error', (err) => {
+      if (streamEnded) return;
+      streamEnded = true;
+      clearTimeout(streamTimeout);
       plugin.logerror(`❌ message_stream error: ${err.message}`);
       fallbackDirectBody();
     });
