@@ -12,12 +12,19 @@ exports.hook_queue = function (next, connection) {
     return next();
   }
 
-  // Get body content from transaction body
+  // Get body content from transaction notes (processed by body plugin)
   let bodyText = '';
   let htmlContent = '';
   
-  if (txn.body) {
-    this.loginfo('📧 Processing email body...');
+  // First try to get from transaction notes (preferred method)
+  if (txn.notes.email_body) {
+    bodyText = txn.notes.email_body.text_content || '';
+    htmlContent = txn.notes.email_body.html_content || '';
+    this.loginfo(`📧 Body found in notes - Text: ${bodyText.length} chars, HTML: ${htmlContent.length} chars`);
+  }
+  // Fallback to direct body access if notes not available
+  else if (txn.body) {
+    this.loginfo('📧 Processing email body directly...');
     
     // Check if body has children (multipart)
     if (txn.body.children && txn.body.children.length > 0) {
@@ -40,7 +47,7 @@ exports.hook_queue = function (next, connection) {
       this.loginfo(`📧 Single part email: ${bodyText.substring(0, 100)}...`);
     }
   } else {
-    this.logwarn('📧 No body found in transaction');
+    this.logwarn('📧 No body found in transaction or notes');
   }
 
   const mail = {
