@@ -1,13 +1,6 @@
 const { simpleParser } = require('mailparser');
 const http = require('http');
 
-exports.register = function() {
-  this.loginfo('📧 Post to API plugin loaded');
-  this.register_hook('data', 'hook_data');
-  this.register_hook('data_line', 'hook_data_line');
-  this.register_hook('data_post', 'hook_data_post');
-};
-
 exports.hook_data = function (next, connection) {
     connection.notes.email_data = [];
     next();
@@ -30,13 +23,6 @@ exports.hook_data_post = function (next, connection) {
             const text = parsed.text || '';
             const html = parsed.html || '';
 
-            console.log("📨 Parsed email:");
-            console.log("From:", from);
-            console.log("To:", to);
-            console.log("Subject:", subject);
-            console.log("Text length:", text.length);
-            console.log("HTML length:", html.length);
-
             const payload = JSON.stringify({
                 from,
                 to,
@@ -51,7 +37,7 @@ exports.hook_data_post = function (next, connection) {
             });
 
             const req = http.request({
-                hostname: '178.128.222.199',
+                hostname: '127.0.0.1',
                 port: 3001,
                 path: '/api/receive-mail',
                 method: 'POST',
