@@ -24,26 +24,55 @@ exports.hook_data = function(next, connection, data) {
       });
     }
     
-    // Create simple email data object
+    // Extract body from raw email data
+    let body = '';
+    let html = '';
+    
+    if (rawEmailData) {
+      const lines = rawEmailData.split('\n');
+      let inBody = false;
+      let bodyLines = [];
+      
+      // Find where headers end and body begins
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].trim() === '' && !inBody) {
+          inBody = true;
+          continue;
+        }
+        if (inBody) {
+          bodyLines.push(lines[i]);
+        }
+      }
+      
+      body = bodyLines.join('\n').trim();
+      
+      // Check if it's HTML content
+      if (body.includes('<html') || body.includes('<!DOCTYPE') || body.includes('<body')) {
+        html = body;
+      }
+    }
+    
+    // Create email data object compatible with API schema
     const emailData = {
       // Basic email info
       from: txn.mail_from ? txn.mail_from.address() : '',
       to: txn.rcpt_to ? txn.rcpt_to.map(r => r.address()) : [],
       subject: txn.header ? (txn.header.get('subject') || '(no subject)') : '(no subject)',
+      date: txn.header ? (txn.header.get('date') || new Date().toISOString()) : new Date().toISOString(),
       
-      // Raw email data (complete email as received)
-      rawEmailData: rawEmailData,
+      // Email content
+      body: body,
+      html: html,
       
-      // All headers
-      headers: headers,
+      // Headers (compatible with API schema)
+      headers: {
+        messageId: headers['message-id'] || '',
+        contentType: headers['content-type'] || '',
+        mimeVersion: headers['mime-version'] || ''
+      },
       
-      // Server info
-      receivedAt: new Date().toISOString(),
-      serverInfo: {
-        remoteIP: connection.remote.ip,
-        localIP: connection.local.ip,
-        port: connection.local.port
-      }
+      // Raw email data for debugging
+      rawEmailData: rawEmailData
     };
     
     // Log basic info
@@ -51,7 +80,17 @@ exports.hook_data = function(next, connection, data) {
     plugin.loginfo(`From: ${emailData.from}`);
     plugin.loginfo(`To: ${emailData.to.join(', ')}`);
     plugin.loginfo(`Subject: ${emailData.subject}`);
+    plugin.loginfo(`Body length: ${body.length} characters`);
+    plugin.loginfo(`HTML length: ${html.length} characters`);
     plugin.loginfo(`Raw data length: ${rawEmailData.length} characters`);
+    
+    // Log content preview for debugging
+    if (body) {
+      plugin.loginfo(`📄 Body preview: ${body.substring(0, 200)}...`);
+    }
+    if (html) {
+      plugin.loginfo(`🌐 HTML preview: ${html.substring(0, 200)}...`);
+    }
     
     // Send raw data to API
     axios.post('http://178.128.222.199:3001/api/receive-mail?key=supersecretapikey123', emailData)
