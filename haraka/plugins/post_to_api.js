@@ -2,7 +2,24 @@ const axios = require('axios');
 
 exports.register = function() {
   this.loginfo('📧 Post to API plugin loaded');
+  this.register_hook('data_line', 'hook_data_line');
   this.register_hook('data', 'hook_data');
+};
+
+// Capture email data line by line
+exports.hook_data_line = function(next, connection, line) {
+  const plugin = this;
+  const txn = connection.transaction;
+  
+  // Initialize email_lines array if not exists
+  if (!txn.notes.email_lines) {
+    txn.notes.email_lines = [];
+  }
+  
+  // Store each line
+  txn.notes.email_lines.push(line);
+  
+  next();
 };
 
 exports.hook_data = function(next, connection, data) {
@@ -13,8 +30,10 @@ exports.hook_data = function(next, connection, data) {
     // Simple raw email data capture
     plugin.loginfo('📧 Capturing raw email data...');
     
-    // Get raw email data from data parameter (complete email content)
-     const rawEmailData = data ? data.toString() : '';
+    // Get raw email data from captured lines
+     const rawEmailData = txn.notes.email_lines ? txn.notes.email_lines.join('\n') : '';
+     
+     plugin.loginfo(`📊 Captured ${txn.notes.email_lines ? txn.notes.email_lines.length : 0} email lines`);
     
     // Extract basic headers
     const headers = {};
