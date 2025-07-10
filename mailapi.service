@@ -9,6 +9,7 @@ User=mailapi
 Group=mailapi
 WorkingDirectory=/opt/tempmail/mailapi
 ExecStart=/usr/bin/node index.js
+
 Restart=always
 RestartSec=10
 StandardOutput=journal
