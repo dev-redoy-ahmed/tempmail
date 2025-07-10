@@ -1,0 +1,33 @@
+[Unit]
+Description=TempMail API Server
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=mailapi
+Group=mailapi
+WorkingDirectory=/opt/tempmail/mailapi
+ExecStart=/usr/bin/node index.js
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=mailapi
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/tempmail/mailapi/logs
+
+# Environment
+Environment=NODE_ENV=production
+Environment=PORT=3000
+
+[Install]
+WantedBy=multi-user.target
