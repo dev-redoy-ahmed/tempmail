@@ -123,9 +123,9 @@ class InboxScreen extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () {
                       emailProvider.clearError();
-                      emailProvider.refreshInbox();
+                      // Note: Refresh removed - emails are real-time via socket
                     },
-                    child: const Text('Retry'),
+                    child: const Text('Clear Error'),
                   ),
                 ],
               ),
@@ -219,7 +219,7 @@ class InboxScreen extends StatelessWidget {
                         ),
                       )
                     : RefreshIndicator(
-                        onRefresh: () => emailProvider.refreshInbox(),
+                        onRefresh: () async {}, // Refresh removed - emails are real-time via socket
                         child: ListView.builder(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           itemCount: emailProvider.emails.length,
@@ -268,7 +268,7 @@ class InboxScreen extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              emailProvider.deleteAllMessages();
+              emailProvider.clearEmails();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,

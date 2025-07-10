@@ -42,19 +42,19 @@ class SavedEmailsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => emailProvider.refreshDeviceEmails(),
-                    child: const Text('Retry'),
+                    onPressed: null, // Device emails removed - now real-time only
+                    child: const Text('Real-time Mode'),
                   ),
                 ],
               ),
             );
           }
 
-          final generatedEmails = emailProvider.generatedEmails;
+          final savedEmails = emailProvider.savedEmails;
           final currentEmail = emailProvider.currentEmail;
           final stats = emailProvider.getEmailStats();
 
-          if (generatedEmails.isEmpty) {
+          if (savedEmails.isEmpty) {
             return const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -105,18 +105,17 @@ class SavedEmailsScreen extends StatelessWidget {
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.all(16),
-                  itemCount: generatedEmails.length,
+                  itemCount: savedEmails.length,
                   itemBuilder: (context, index) {
-                    final emailData = generatedEmails[index];
-                    final email = emailData['email'] as String;
+                    final email = savedEmails[index];
                     final isCurrentEmail = email == emailProvider.currentEmail;
                     
                     return _SavedEmailTile(
                       email: email,
-                      emailData: emailData,
+                      emailData: {'email': email}, // Simple format for saved emails
                       isCurrentEmail: isCurrentEmail,
                       onTap: () {
-                        emailProvider.switchToEmail(email);
+                        emailProvider.setCurrentEmail(email);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text('Switched to $email'),
@@ -125,7 +124,7 @@ class SavedEmailsScreen extends StatelessWidget {
                         );
                       },
                       onDelete: () {
-                        _showDeleteConfirmation(context, emailData['_id'], emailData, emailProvider);
+                        _showDeleteConfirmation(context, email, {'email': email}, emailProvider);
                       },
                     );
                   },
@@ -247,7 +246,7 @@ class SavedEmailsScreen extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: () {
-                  emailProvider.deleteDeviceEmail(emailId);
+                  emailProvider.removeSavedEmail(emailId);
                   Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(

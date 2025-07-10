@@ -35,8 +35,7 @@ class EmailProvider with ChangeNotifier {
   Future<void> _initializeProvider() async {
     await loadSavedEmails();
     await loadDomains();
-    await loadGeneratedEmails();
-    await loadReceivedEmails();
+    // Note: Device email loading removed - now real-time only
   }
 
 
@@ -146,8 +145,7 @@ class EmailProvider with ChangeNotifier {
       if (result['success'] == true) {
         _currentEmail = result['email'];
         await _saveEmailToPrefs(_currentEmail!);
-        await loadGeneratedEmails(); // Refresh generated emails list
-        await refreshInbox();
+        // Note: Email loading removed - emails are now real-time via socket
         _setLoading(false);
         return {'success': true, 'email': result['email']};
       } else {

@@ -27,12 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     // Auto-refresh inbox if there's a current email
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final emailProvider = Provider.of<EmailProvider>(context, listen: false);
-      if (emailProvider.currentEmail != null) {
-        emailProvider.refreshInbox();
-      }
-    });
+    // Note: Inbox refresh removed - emails are now real-time via socket
   }
 
   @override
