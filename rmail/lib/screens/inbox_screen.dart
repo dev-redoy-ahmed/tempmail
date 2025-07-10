@@ -44,9 +44,7 @@ class InboxScreen extends StatelessWidget {
                         ),
                       )
                     : const Icon(Icons.refresh),
-                onPressed: emailProvider.isLoading
-                    ? null
-                    : () => emailProvider.refreshInbox(),
+                onPressed: null, // Refresh removed - emails are real-time via socket
               );
             },
           ),
@@ -54,7 +52,7 @@ class InboxScreen extends StatelessWidget {
             onSelected: (value) {
               final emailProvider = Provider.of<EmailProvider>(context, listen: false);
               if (value == 'delete_all') {
-                _showDeleteAllDialog(context, emailProvider);
+                emailProvider.clearEmails();
               }
             },
             itemBuilder: (context) => [
@@ -297,7 +295,7 @@ class InboxScreen extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              emailProvider.deleteMessage(index);
+              emailProvider.removeEmail(index);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,

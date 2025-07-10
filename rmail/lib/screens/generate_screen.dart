@@ -138,9 +138,9 @@ class _GenerateScreenState extends State<GenerateScreen> {
                 ),
                 const Spacer(),
                 TextButton.icon(
-                  onPressed: () => emailProvider.refreshInbox(),
+                  onPressed: null, // Refresh removed - emails are real-time via socket
                   icon: const Icon(Icons.refresh, size: 16),
-                  label: const Text('Refresh'),
+                  label: const Text('Real-time'),
                 ),
               ],
             ),

@@ -13,10 +13,8 @@ class SavedEmailsScreen extends StatelessWidget {
         title: const Text('Generated Emails'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              context.read<EmailProvider>().refreshDeviceEmails();
-            },
+            icon: const Icon(Icons.info_outline),
+            onPressed: null, // Device emails removed - now real-time only
           ),
         ],
       ),

@@ -222,97 +222,17 @@ async function retryFailedEmails() {
 // === 📥 RECEIVE MAIL FROM HARAKA ===
 app.post('/api/receive-mail', authKey, async (req, res) => {
   const mail = req.body;
-  let socketSent = false;
-  let dbSaved = false;
-  let deviceEmailsSaved = false;
   
   try {
-    // 🚀 STEP 1: Send to frontend first via real-time socket
+    // 🚀 Send to frontend via real-time socket only
     io.emit('new_mail', mail);
-    socketSent = true;
     console.log('📡 Mail sent to frontend via socket');
     
-    // 🗄️ STEP 2: Save to main Email collection
-    // Ensure 'to' field is an array for MongoDB schema compatibility
-    const mailForDB = {
-      ...mail,
-      to: Array.isArray(mail.to) ? mail.to : [mail.to]
-    };
-    await Email.create(mailForDB);
-    dbSaved = true;
-    console.log('💾 Mail saved to main database');
-    
-    // 📱 STEP 3: Store in device-based collection for all devices that have this email
-    const recipientEmail = Array.isArray(mail.to) ? mail.to[0] : mail.to;
-    const devicesWithEmail = await DeviceEmail.find({ 
-      email: recipientEmail, 
-      type: 'generated' 
-    });
-    
-    // Store received email for each device that has generated this email
-    const deviceEmailPromises = devicesWithEmail.map(deviceEmail => 
-      DeviceEmail.create({
-        deviceId: deviceEmail.deviceId,
-        email: recipientEmail,
-        type: 'received',
-        from: mail.from,
-        subject: mail.subject,
-        body: mail.body,
-        html: mail.html || '',
-        receivedAt: new Date(mail.date),
-        headers: {
-          messageId: mail.headers?.['message-id'] || '',
-          contentType: mail.headers?.['content-type'] || '',
-          mimeVersion: mail.headers?.['mime-version'] || ''
-        }
-      })
-    );
-    
-    await Promise.all(deviceEmailPromises);
-    deviceEmailsSaved = true;
-    console.log(`📱 Mail saved to ${devicesWithEmail.length} device collections`);
-    
-    res.send('✅ Mail sent via socket and saved to database');
+    res.send('✅ Mail sent via socket');
     
   } catch (err) {
     console.error('❌ Error in receive-mail:', err);
-    
-    // Detailed error reporting
-    const status = {
-      socketSent,
-      dbSaved,
-      deviceEmailsSaved,
-      error: err.message
-    };
-    
-    console.log('📊 Mail processing status:', status);
-    
-    // If socket was sent but database failed, log for manual recovery
-     if (socketSent && !dbSaved) {
-       const timestamp = new Date().toISOString();
-       console.error('⚠️ CRITICAL: Mail sent to user but not saved to database!', {
-         mail,
-         timestamp
-       });
-       
-       // Log to backup file for manual recovery
-       await logFailedEmail(mail, err, timestamp);
-       
-       // Try to save again with retry logic
-       try {
-         await Email.create(mail);
-         console.log('✅ Retry successful: Mail saved to database');
-       } catch (retryErr) {
-         console.error('❌ Retry failed:', retryErr.message);
-       }
-     }
-    
-    // Return appropriate response
-    if (socketSent) {
-      res.send('⚠️ Mail sent to user but database save failed');
-    } else {
-      res.status(500).send('❌ Error processing mail');
-    }
+    res.status(500).send('❌ Error processing mail');
   }
 });
 

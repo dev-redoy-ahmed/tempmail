@@ -230,7 +230,7 @@ class EmailDetailScreen extends StatelessWidget {
               
               // Delete the email
               final emailProvider = Provider.of<EmailProvider>(context, listen: false);
-              emailProvider.deleteMessage(index);
+              emailProvider.removeEmail(index);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,

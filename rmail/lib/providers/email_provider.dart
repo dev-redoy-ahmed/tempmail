@@ -4,15 +4,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../models/email_model.dart';
 import '../services/api_service.dart';
-import '../services/device_service.dart';
+// Note: device_service import removed - device functionality eliminated
 
 class EmailProvider with ChangeNotifier {
   String? _currentEmail;
   List<EmailModel> _emails = [];
   List<String> _savedEmails = [];
   List<String> _availableDomains = [];
-  List<Map<String, dynamic>> _generatedEmails = [];
-  List<Map<String, dynamic>> _receivedEmails = [];
+  // Note: Generated and received emails removed - now real-time only
   bool _isLoading = false;
   String? _error;
   IO.Socket? _socket;
@@ -23,8 +22,7 @@ class EmailProvider with ChangeNotifier {
   List<EmailModel> get emails => _emails;
   List<String> get savedEmails => _savedEmails;
   List<String> get domains => _availableDomains;
-  List<Map<String, dynamic>> get generatedEmails => _generatedEmails;
-  List<Map<String, dynamic>> get receivedEmails => _receivedEmails;
+  // Note: Generated and received emails getters removed
   bool get isSocketConnected => _isSocketConnected;
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -128,8 +126,7 @@ class EmailProvider with ChangeNotifier {
       if (email != null) {
         _currentEmail = email;
         await _saveEmailToPrefs(_currentEmail!);
-        await loadGeneratedEmails(); // Refresh generated emails list
-        await refreshInbox();
+        // Note: Email loading removed - emails are now real-time via socket
       } else {
         _error = 'Failed to generate email';
       }
@@ -176,71 +173,23 @@ class EmailProvider with ChangeNotifier {
   Future<void> setCurrentEmail(String email) async {
     _currentEmail = email;
     await _saveEmailToPrefs(email);
-    await refreshInbox();
+    // Note: Inbox refresh removed - emails are now real-time via socket
   }
 
-  // Refresh inbox
-  Future<void> refreshInbox() async {
-    if (_currentEmail == null) return;
-    
-    _setLoading(true);
-    _clearError();
-    
-    try {
-      final emailsData = await ApiService.getInbox(_currentEmail!);
-      if (emailsData != null) {
-        _emails = emailsData.map((e) => EmailModel.fromJson(e)).toList();
-      } else {
-        _emails = [];
-      }
-    } catch (e) {
-      _error = 'Error refreshing inbox: $e';
-      _emails = [];
-    }
-    
-    _setLoading(false);
+  // Note: Database operations removed - emails are now real-time only via socket
+  
+  // Clear emails from memory (local only)
+  void clearEmails() {
+    _emails = [];
+    notifyListeners();
   }
-
-  // Delete all messages
-  Future<void> deleteAllMessages() async {
-    if (_currentEmail == null) return;
-    
-    _setLoading(true);
-    _clearError();
-    
-    try {
-      final success = await ApiService.deleteAllMessages(_currentEmail!);
-      if (success) {
-        _emails = [];
-      } else {
-        _error = 'Failed to delete messages';
-      }
-    } catch (e) {
-      _error = 'Error deleting messages: $e';
+  
+  // Remove email from memory (local only)
+  void removeEmail(int index) {
+    if (index >= 0 && index < _emails.length) {
+      _emails.removeAt(index);
+      notifyListeners();
     }
-    
-    _setLoading(false);
-  }
-
-  // Delete specific message
-  Future<void> deleteMessage(int index) async {
-    if (_currentEmail == null || index >= _emails.length) return;
-    
-    _setLoading(true);
-    _clearError();
-    
-    try {
-      final success = await ApiService.deleteMessage(_currentEmail!, index);
-      if (success) {
-        await refreshInbox();
-      } else {
-        _error = 'Failed to delete message';
-      }
-    } catch (e) {
-      _error = 'Error deleting message: $e';
-    }
-    
-    _setLoading(false);
   }
 
   // Remove saved email
@@ -269,16 +218,14 @@ class EmailProvider with ChangeNotifier {
       _savedEmails.clear();
       _currentEmail = null;
       _emails.clear();
-      _generatedEmails.clear();
-      _receivedEmails.clear();
+      // Note: Generated and received emails clearing removed
       _error = null;
       
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('saved_emails');
       await prefs.remove('current_email');
       
-      // Also clear device emails from server
-      await ApiService.clearDeviceEmails();
+      // Note: Device email clearing removed - emails are now real-time only
       
       notifyListeners();
     } catch (e) {
@@ -287,93 +234,14 @@ class EmailProvider with ChangeNotifier {
     }
   }
 
-  // === DEVICE-BASED EMAIL MANAGEMENT ===
-
-  Future<void> loadGeneratedEmails() async {
-    try {
-      final emails = await ApiService.getGeneratedEmails();
-      if (emails != null) {
-        _generatedEmails = emails;
-        notifyListeners();
-      }
-    } catch (e) {
-      _error = 'Failed to load generated emails: $e';
-      notifyListeners();
-    }
-  }
-
-  Future<void> loadReceivedEmails() async {
-    try {
-      final emails = await ApiService.getReceivedEmails();
-      if (emails != null) {
-        _receivedEmails = emails;
-        notifyListeners();
-      }
-    } catch (e) {
-      _error = 'Failed to load received emails: $e';
-      notifyListeners();
-    }
-  }
-
-  Future<void> loadDeviceInbox(String email) async {
-    _setLoading(true);
-    try {
-      final inbox = await ApiService.getDeviceInbox(email);
-      if (inbox != null) {
-        // Convert to EmailModel format
-        _emails = inbox.map((emailData) => EmailModel(
-          id: emailData['_id'] ?? '',
-          from: emailData['from'] ?? '',
-          to: emailData['to'] ?? '',
-          subject: emailData['subject'] ?? '(no subject)',
-          body: emailData['body'] ?? '',
-          date: emailData['receivedAt'] ?? '',
-        )).toList();
-        clearError();
-      } else {
-        _error = 'Failed to load inbox';
-      }
-    } catch (e) {
-      _error = 'Error loading inbox: $e';
-    }
-    _setLoading(false);
-  }
-
-  Future<void> deleteDeviceEmail(String emailId) async {
-    try {
-      final success = await ApiService.deleteDeviceEmail(emailId);
-      if (success) {
-        await loadGeneratedEmails();
-        await loadReceivedEmails();
-        clearError();
-      } else {
-        _error = 'Failed to delete email';
-      }
-    } catch (e) {
-      _error = 'Error deleting email: $e';
-    }
-    notifyListeners();
-  }
-
-  Future<void> refreshDeviceEmails() async {
-    await loadGeneratedEmails();
-    await loadReceivedEmails();
-  }
-
-  // Switch to a generated email
-  Future<void> switchToEmail(String email) async {
-    _currentEmail = email;
-    await _saveEmailToPrefs(email);
-    await loadDeviceInbox(email);
-    notifyListeners();
-  }
+  // Note: Device-based email management removed - emails are now real-time only via socket
 
   // Get email statistics
   Map<String, int> getEmailStats() {
     return {
-      'generated': _generatedEmails.length,
-      'received': _receivedEmails.length,
-      'total': _generatedEmails.length + _receivedEmails.length,
+      'current_emails': _emails.length,
+      'saved_emails': _savedEmails.length,
+      'total': _emails.length,
     };
   }
 
