@@ -224,15 +224,40 @@ app.post('/api/receive-mail', authKey, async (req, res) => {
   const mail = req.body;
   
   try {
-    // 🚀 Send to frontend via real-time socket only
-    io.emit('new_mail', mail);
-    console.log('📡 Mail sent to frontend via socket');
+    // Log raw email data for debugging
+    console.log('📧 Raw email received:', {
+      from: mail.from,
+      to: mail.to,
+      messageId: mail.messageId,
+      timestamp: mail.timestamp,
+      rawSize: mail.raw ? mail.raw.length : 0
+    });
     
-    res.send('✅ Mail sent via socket');
+    // 🚀 Send complete raw email data to frontend via real-time socket
+    io.emit('new_mail', {
+      from: mail.from,
+      to: mail.to,
+      raw: mail.raw,
+      timestamp: mail.timestamp || new Date().toISOString(),
+      messageId: mail.messageId,
+      received: new Date().toISOString()
+    });
+    
+    console.log('📡 Raw email data sent to frontend via socket');
+    
+    res.json({ 
+      success: true, 
+      message: 'Raw email data sent via socket',
+      messageId: mail.messageId 
+    });
     
   } catch (err) {
-    console.error('❌ Error in receive-mail:', err);
-    res.status(500).send('❌ Error processing mail');
+    console.error('❌ Error processing raw email:', err);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Error processing raw email',
+      message: err.message 
+    });
   }
 });
 
