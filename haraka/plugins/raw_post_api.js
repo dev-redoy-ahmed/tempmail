@@ -4,56 +4,66 @@ const http = require('http');
 exports.hook_data_post = function (next, connection) {
     const txn = connection.transaction;
     
-    if (!txn) return next();
-
-    let raw = '';
-    const stream = txn.message_stream;
-
-    stream.on('data', (chunk) => {
-        raw += chunk;
+    // ✅ Null checking to prevent crashes
+    if (!txn || !txn.message_stream) {
+        connection.logerror('raw_post_api', '❌ message_stream is null, skipping.');
+        return next();
+    }
+    
+    let chunks = [];
+    let rawSize = 0;
+    
+    txn.message_stream.on('data', (chunk) => {
+        chunks.push(chunk);
+        rawSize += chunk.length;
     });
-
-    stream.on('end', () => {
-        const payload = {
+    
+    txn.message_stream.on('end', () => {
+        const rawEmail = Buffer.concat(chunks).toString('utf8');
+        connection.loginfo('raw_post_api', `📧 Email received (${rawEmail.length} chars)`);
+        
+        const emailData = {
             from: txn.mail_from ? txn.mail_from.address() : '',
-            to: txn.rcpt_to ? txn.rcpt_to.map(r => r.address()) : [],
-            messageId: txn.uuid,
+            to: txn.rcpt_to ? txn.rcpt_to.map(rcpt => rcpt.address()) : [],
+            subject: txn.header ? txn.header.get('subject') : '',
+            body: rawEmail,
             timestamp: new Date().toISOString(),
-            rawSize: raw.length,
-            raw: raw
+            rawSize: rawSize
         };
-
-        console.log(`📧 Raw email captured: rawSize=${raw.length}, from=${payload.from}`);
-
-        // Send to backend API with API key
-        const options = {
+        
+        const postData = JSON.stringify(emailData);
+        
+        const req = http.request({
             hostname: '127.0.0.1',
-            port: 3001,
-            path: '/api/receive-mail?key=supersecretapikey123',
+            port: 3000,
+            path: '/api/receive-mail',
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(JSON.stringify(payload))
+                'Content-Length': Buffer.byteLength(postData)
             }
-        };
-
-        const req = http.request(options, res => {
+        }, (res) => {
             let responseData = '';
-            res.on('data', chunk => {
+            res.on('data', (chunk) => {
                 responseData += chunk;
             });
             res.on('end', () => {
-                connection.loginfo(this, `✅ Raw email sent: status ${res.statusCode}, rawSize=${raw.length}`);
+                connection.loginfo('raw_post_api', '✅ Raw email sent to API successfully');
+                return next();
             });
         });
-
-        req.on('error', error => {
-            connection.logerror(this, `❌ Failed to send raw email: ${error.message}`);
+        
+        req.on('error', (err) => {
+            connection.logerror('raw_post_api', `❌ Failed to send raw email: ${err.message}`);
+            return next();
         });
-
-        req.write(JSON.stringify(payload));
+        
+        req.write(postData);
         req.end();
     });
-
-    return next();
+    
+    txn.message_stream.on('error', (err) => {
+        connection.logerror('raw_post_api', `❌ Stream error: ${err.message}`);
+        return next();
+    });
 };
