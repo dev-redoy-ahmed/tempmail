@@ -123,9 +123,47 @@
             <div class="page-header">
                 <h1>Email Monitor</h1>
                 <p>Real-time email monitoring</p>
+                <div class="page-actions">
+                    <button id="refresh-emails" class="btn btn-primary">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
             </div>
             <div id="email-list" class="email-list">
                 <!-- Real-time emails will appear here -->
+            </div>
+        </div>
+
+        <!-- Raw Email Viewer Modal -->
+        <div id="raw-email-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Raw Email Data</h2>
+                    <span class="close" onclick="closeRawEmailModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="email-details">
+                        <div class="detail-row">
+                            <strong>From:</strong> <span id="raw-email-from"></span>
+                        </div>
+                        <div class="detail-row">
+                            <strong>To:</strong> <span id="raw-email-to"></span>
+                        </div>
+                        <div class="detail-row">
+                            <strong>Subject:</strong> <span id="raw-email-subject"></span>
+                        </div>
+                        <div class="detail-row">
+                            <strong>Timestamp:</strong> <span id="raw-email-timestamp"></span>
+                        </div>
+                        <div class="detail-row">
+                            <strong>Device ID:</strong> <span id="raw-email-device"></span>
+                        </div>
+                    </div>
+                    <div class="raw-content">
+                        <h3>Raw Email Content:</h3>
+                        <pre id="raw-email-content" class="raw-email-display"></pre>
+                    </div>
+                </div>
             </div>
         </div>
 

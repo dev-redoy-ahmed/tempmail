@@ -325,10 +325,16 @@ body {
     padding: 15px 20px;
     border-bottom: 1px solid #333;
     transition: background-color 0.3s ease;
+    cursor: pointer;
+    position: relative;
 }
 
 .email-item:hover {
     background-color: #2a2a2a;
+}
+
+.email-item:last-child {
+    border-bottom: none;
 }
 
 .email-header {
@@ -357,6 +363,124 @@ body {
 .email-to {
     color: #888;
     font-size: 12px;
+}
+
+.view-raw-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #007acc;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.email-item:hover .view-raw-btn {
+    opacity: 1;
+}
+
+.view-raw-btn:hover {
+    background: #005a99;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.modal-content {
+    background-color: #1a1a1a;
+    margin: 2% auto;
+    padding: 0;
+    border: 1px solid #333;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 1000px;
+    max-height: 90vh;
+    overflow: hidden;
+}
+
+.modal-header {
+    background: #2a2a2a;
+    padding: 15px 20px;
+    border-bottom: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: #00ff88;
+}
+
+.close {
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.close:hover {
+    color: #fff;
+}
+
+.modal-body {
+    padding: 20px;
+    max-height: calc(90vh - 80px);
+    overflow-y: auto;
+}
+
+.email-details {
+    background: #2a2a2a;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+.detail-row {
+    margin-bottom: 10px;
+    color: #ccc;
+}
+
+.detail-row strong {
+    color: #00ff88;
+    display: inline-block;
+    width: 100px;
+}
+
+.raw-content h3 {
+    color: #00ff88;
+    margin-bottom: 10px;
+}
+
+.raw-email-display {
+    background: #0a0a0a;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 15px;
+    color: #ccc;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 400px;
+    overflow-y: auto;
+    margin: 0;
 }
 
 /* Settings */

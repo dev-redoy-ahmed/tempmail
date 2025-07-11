@@ -12,6 +12,7 @@ class AdminPanel {
         this.initDomainManagement();
         this.initApiKeyManagement();
         this.initApiTesting();
+        this.initEmailMonitor();
         this.loadDashboardStats();
         this.loadDomains();
         this.loadCurrentApiKey();
@@ -229,6 +230,19 @@ class AdminPanel {
         }
     }
 
+    // Initialize email monitor
+    initEmailMonitor() {
+        // Initialize refresh emails button
+        const refreshEmailsBtn = document.getElementById('refresh-emails');
+        if (refreshEmailsBtn) {
+            refreshEmailsBtn.addEventListener('click', () => this.loadRecentEmails());
+        }
+        
+        // Make viewRawEmail globally accessible
+        window.viewRawEmail = (emailId) => this.viewRawEmail(emailId);
+        window.closeRawEmailModal = () => this.closeRawEmailModal();
+    }
+
     // Email Monitor
     addEmailToMonitor(mail) {
         const emailList = document.getElementById('email-list');
@@ -258,19 +272,52 @@ class AdminPanel {
                 const emails = await response.json();
                 const emailList = document.getElementById('email-list');
                 emailList.innerHTML = emails.map(mail => `
-                    <div class="email-item">
+                    <div class="email-item" data-email-id="${mail._id}">
+                        <button class="view-raw-btn" onclick="viewRawEmail('${mail._id}')">
+                            <i class="fas fa-code"></i> Raw
+                        </button>
                         <div class="email-header">
-                            <span class="email-from">${mail.from}</span>
-                            <span class="email-date">${new Date(mail.date).toLocaleString()}</span>
+                            <span class="email-from">${mail.from || 'Unknown'}</span>
+                            <span class="email-date">${new Date(mail.timestamp || mail.createdAt).toLocaleString()}</span>
                         </div>
-                        <div class="email-subject">${mail.subject}</div>
+                        <div class="email-subject">${mail.subject || '(no subject)'}</div>
                         <div class="email-to">To: ${Array.isArray(mail.to) ? mail.to.join(', ') : mail.to}</div>
+                        <div class="email-device">Device: ${mail.deviceId}</div>
                     </div>
                 `).join('');
             }
         } catch (err) {
             console.error('Error loading recent emails:', err);
         }
+    }
+
+    async viewRawEmail(emailId) {
+        try {
+            const response = await fetch(`/admin/email/${emailId}/raw?key=${this.apiKey}`);
+            if (response.ok) {
+                const emailData = await response.json();
+                
+                // Populate modal with email data
+                document.getElementById('raw-email-from').textContent = emailData.from || 'Unknown';
+                document.getElementById('raw-email-to').textContent = Array.isArray(emailData.to) ? emailData.to.join(', ') : emailData.to;
+                document.getElementById('raw-email-subject').textContent = emailData.subject || '(no subject)';
+                document.getElementById('raw-email-timestamp').textContent = new Date(emailData.timestamp).toLocaleString();
+                document.getElementById('raw-email-device').textContent = emailData.deviceId;
+                document.getElementById('raw-email-content').textContent = emailData.raw || 'No raw data available';
+                
+                // Show modal
+                document.getElementById('raw-email-modal').style.display = 'block';
+            } else {
+                this.showMessage('Failed to load raw email data', 'error');
+            }
+        } catch (err) {
+            console.error('Error loading raw email:', err);
+            this.showMessage('Error loading raw email data', 'error');
+        }
+    }
+
+    closeRawEmailModal() {
+        document.getElementById('raw-email-modal').style.display = 'none';
     }
 
     // API Key Management

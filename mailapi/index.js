@@ -817,13 +817,39 @@ app.get('/admin/stats', authKey, async (req, res) => {
 // Get recent emails for monitoring
 app.get('/admin/recent-emails', authKey, async (req, res) => {
   try {
-    const recentEmails = await Email.find()
-      .sort({ date: -1 })
-      .limit(50);
+    const recentEmails = await DeviceEmail.find({ type: 'received' })
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .select('from to subject body raw timestamp received deviceId email');
     res.json(recentEmails);
   } catch (err) {
     console.error('Error getting recent emails:', err);
     res.status(500).send('Error getting recent emails');
+  }
+});
+
+// Get detailed email with raw data
+app.get('/admin/email/:emailId/raw', authKey, async (req, res) => {
+  try {
+    const email = await DeviceEmail.findById(req.params.emailId);
+    if (!email) {
+      return res.status(404).json({ error: 'Email not found' });
+    }
+    res.json({
+      id: email._id,
+      from: email.from,
+      to: email.to,
+      subject: email.subject,
+      body: email.body,
+      raw: email.raw,
+      timestamp: email.timestamp,
+      received: email.received,
+      deviceId: email.deviceId,
+      messageId: email.messageId
+    });
+  } catch (err) {
+    console.error('Error getting email raw data:', err);
+    res.status(500).json({ error: 'Error getting email raw data' });
   }
 });
 
