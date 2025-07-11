@@ -3,10 +3,10 @@
   "description": "An SMTP Server",
   "version": "0.0.1",
   "dependencies": {
-    "axios": "^1.10.0",
+    "axios": "^1.7.9",
     "haraka": "^0.0.33",
     "mailparser": "^3.7.4",
-    "nodemailer": "^7.0.5"
+    "nodemailer": "^6.9.18"
   },
   "repository": "",
   "license": "MIT"
