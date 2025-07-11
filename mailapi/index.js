@@ -934,7 +934,7 @@ app.get('/admin/test-system', authKey, async (req, res) => {
 });
 
 // === START SERVER ===
-server.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, () => {
   console.log(`🚀 API & Socket.IO server running on port ${PORT}`);
   console.log(`📊 Admin panel available at: http://localhost:${PORT}/admin`);
 });

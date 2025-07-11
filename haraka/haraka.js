@@ -1,8 +1,10 @@
-'use strict';
+const { spawn } = require('child_process');
 
-const path = require('path');
-const Haraka = require('haraka');
+const haraka = spawn('/usr/local/bin/haraka', ['-c', '.'], {
+  stdio: 'inherit',
+  cwd: __dirname
+});
 
-const server = new Haraka();
-server.loadModules();
-server.listen();
+haraka.on('exit', (code) => {
+  console.log(`Haraka exited with code ${code}`);
+});
