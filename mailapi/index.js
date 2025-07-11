@@ -101,7 +101,7 @@ app.get('/admin/activity', authKey, async (req, res) => {
 });
 
 // === CONFIG ===
-const PORT = 3001;
+const PORT = 3000;
 const MONGO_URI = 'mongodb+srv://turbomail:we1we2we3@turbomail.gjohjma.mongodb.net/turbomail?retryWrites=true&w=majority&appName=turbomail';
 let API_KEY = 'supersecretapikey123'; // Made mutable for updates
 const ALLOWED_DOMAINS = ['oplex.online', 'worldwides.help', 'agrovia.store', 'tempbox.pro'];

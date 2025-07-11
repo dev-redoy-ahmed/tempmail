@@ -45,7 +45,7 @@ node index.js
 ### 2. Access Admin Panel
 Open your browser and navigate to:
 ```
-http://localhost:3001/admin
+http://localhost:3000/admin
 ```
 
 ## Usage
@@ -128,7 +128,7 @@ The admin panel directly reads and writes to Haraka's `host_list` file:
 ## Troubleshooting
 
 ### Admin Panel Not Loading
-- Ensure mail-api server is running on port 3001
+- Ensure mail-api server is running on port 3000
 - Check that `public` folder exists with admin files
 - Verify API key is correct
 
