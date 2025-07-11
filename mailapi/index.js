@@ -136,10 +136,14 @@ const DeviceEmailSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   // For received emails
   from: String,
+  to: String,
   subject: String,
   body: String,
   html: String,
   raw: String, // Store complete raw email content
+  messageId: String,
+  timestamp: String,
+  received: String,
   receivedAt: Date,
   headers: {
     messageId: String,
@@ -271,12 +275,17 @@ app.post('/api/receive-mail', authKey, async (req, res) => {
     
     for (const recipient of recipients) {
       if (recipient) {
-        // Find devices that have this email
-        const devices = await Device.find({ email: recipient });
+        // Find devices that have generated this email
+        const generatedEmails = await DeviceEmail.find({ 
+          email: recipient, 
+          type: 'generated' 
+        });
         
-        for (const device of devices) {
+        console.log(`📧 Found ${generatedEmails.length} devices with email: ${recipient}`);
+        
+        for (const generatedEmail of generatedEmails) {
           const newEmail = new DeviceEmail({
-            deviceId: device.deviceId,
+            deviceId: generatedEmail.deviceId,
             email: recipient,
             type: 'received',
             from: mail.from || '',
@@ -290,7 +299,28 @@ app.post('/api/receive-mail', authKey, async (req, res) => {
           });
           
           await newEmail.save();
-          console.log(`💾 Email stored in database for device: ${device.deviceId}`);
+          console.log(`💾 Email stored in database for device: ${generatedEmail.deviceId}`);
+        }
+        
+        // If no devices found with this email, still store it for debugging
+        if (generatedEmails.length === 0) {
+          console.log(`⚠️ No devices found for email: ${recipient}, storing anyway for debugging`);
+          const debugEmail = new DeviceEmail({
+            deviceId: 'unknown',
+            email: recipient,
+            type: 'received',
+            from: mail.from || '',
+            to: recipient,
+            subject: subject,
+            body: body,
+            raw: mail.raw,
+            messageId: mail.messageId,
+            timestamp: mail.timestamp || new Date().toISOString(),
+            received: new Date().toISOString()
+          });
+          
+          await debugEmail.save();
+          console.log(`💾 Debug email stored for unknown device`);
         }
       }
     }
