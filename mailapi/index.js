@@ -231,8 +231,16 @@ app.post('/api/receive-mail', authKey, async (req, res) => {
       to: mail.to,
       messageId: mail.messageId,
       timestamp: mail.timestamp,
-      rawSize: mail.raw ? mail.raw.length : 0
+      rawSize: mail.raw ? mail.raw.length : 0,
+      hasRawData: !!mail.raw
     });
+    
+    // Additional validation
+    if (!mail.raw || mail.raw.length === 0) {
+      console.warn('⚠️ Warning: No raw email data received or empty raw data');
+    } else {
+      console.log(`✅ Raw email data successfully received: ${mail.raw.length} bytes`);
+    }
     
     // Parse basic email information from raw content
     let subject = '(no subject)';
