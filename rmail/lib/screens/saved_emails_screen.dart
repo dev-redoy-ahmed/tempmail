@@ -112,7 +112,10 @@ class SavedEmailsScreen extends StatelessWidget {
                     
                     return _SavedEmailTile(
                       email: email,
-                      emailData: {'email': email}, // Simple format for saved emails
+                      emailData: {
+                        'email': email,
+                        'createdAt': DateTime.now().toIso8601String(),
+                      }, // Simple format for saved emails
                       isCurrentEmail: isCurrentEmail,
                       onTap: () {
                         emailProvider.setCurrentEmail(email);
@@ -124,7 +127,10 @@ class SavedEmailsScreen extends StatelessWidget {
                         );
                       },
                       onDelete: () {
-                        _showDeleteConfirmation(context, email, {'email': email}, emailProvider);
+                        _showDeleteConfirmation(context, email, {
+                          'email': email,
+                          'createdAt': DateTime.now().toIso8601String(),
+                        }, emailProvider);
                       },
                     );
                   },
@@ -285,7 +291,8 @@ class _SavedEmailTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final createdAt = DateTime.parse(emailData['createdAt']);
+    final createdAtString = emailData['createdAt'] as String?;
+    final createdAt = createdAtString != null ? DateTime.parse(createdAtString) : DateTime.now();
     final formattedDate = '${createdAt.day}/${createdAt.month}/${createdAt.year}';
     
     return Card(
