@@ -234,22 +234,78 @@ app.post('/api/receive-mail', authKey, async (req, res) => {
       rawSize: mail.raw ? mail.raw.length : 0
     });
     
-    // 🚀 Send complete raw email data directly to frontend via real-time socket
+    // Parse basic email information from raw content
+    let subject = '(no subject)';
+    let body = '';
+    
+    if (mail.raw) {
+      const lines = mail.raw.split('\n');
+      let inHeaders = true;
+      
+      for (const line of lines) {
+        if (inHeaders) {
+          if (line.trim() === '') {
+            inHeaders = false;
+            continue;
+          }
+          if (line.startsWith('Subject: ')) {
+            subject = line.substring(9).trim();
+          }
+        } else {
+          body += line + '\n';
+        }
+      }
+      body = body.trim();
+    }
+    
+    // Store received email in database for each recipient
+    const recipients = Array.isArray(mail.to) ? mail.to : [mail.to];
+    
+    for (const recipient of recipients) {
+      if (recipient) {
+        // Find devices that have this email
+        const devices = await Device.find({ email: recipient });
+        
+        for (const device of devices) {
+          const newEmail = new DeviceEmail({
+            deviceId: device.deviceId,
+            email: recipient,
+            type: 'received',
+            from: mail.from || '',
+            to: recipient,
+            subject: subject,
+            body: body,
+            raw: mail.raw, // Store complete raw email content
+            messageId: mail.messageId,
+            timestamp: mail.timestamp || new Date().toISOString(),
+            received: new Date().toISOString()
+          });
+          
+          await newEmail.save();
+          console.log(`💾 Email stored in database for device: ${device.deviceId}`);
+        }
+      }
+    }
+    
+    // 🚀 Send complete raw email data to frontend via real-time socket
     io.emit('new_mail', {
       from: mail.from,
       to: mail.to,
+      subject: subject,
+      body: body,
       raw: mail.raw, // 100% raw email content as received
       timestamp: mail.timestamp || new Date().toISOString(),
       messageId: mail.messageId,
       received: new Date().toISOString()
     });
     
-    console.log('📡 100% Raw email data sent directly to frontend via socket');
+    console.log('📡 Raw email data stored in MongoDB and sent to frontend via socket');
     
     res.json({ 
       success: true, 
-      message: '100% raw email data sent directly via socket',
-      messageId: mail.messageId 
+      message: 'Raw email data stored in database and sent via socket',
+      messageId: mail.messageId,
+      recipients: recipients.length
     });
     
   } catch (err) {

@@ -146,7 +146,7 @@ class EmailDetailScreen extends StatelessWidget {
             ),
             
             // Raw Email Data Section (if available)
-            if (email.raw != null && email.raw!.isNotEmpty) ..[
+            if (email.raw != null && email.raw!.isNotEmpty) ...[
               const SizedBox(height: 16),
               Card(
                 child: Theme(
