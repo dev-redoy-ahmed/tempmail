@@ -104,7 +104,7 @@ app.get('/admin/activity', authKey, async (req, res) => {
 const PORT = 3001;
 const MONGO_URI = 'mongodb+srv://turbomail:we1we2we3@turbomail.gjohjma.mongodb.net/turbomail?retryWrites=true&w=majority&appName=turbomail';
 let API_KEY = 'supersecretapikey123'; // Made mutable for updates
-const ALLOWED_DOMAINS = ['oplex.online', 'worldwides.help', 'agrovia.store'];
+const ALLOWED_DOMAINS = ['oplex.online', 'worldwides.help', 'agrovia.store', 'tempbox.pro'];
 const HARAKA_HOST_LIST_PATH = path.join(__dirname, '../haraka/config/host_list');
 const FAILED_EMAILS_LOG = path.join(__dirname, 'failed_emails.log');
 
