@@ -139,6 +139,7 @@ const DeviceEmailSchema = new mongoose.Schema({
   subject: String,
   body: String,
   html: String,
+  raw: String, // Store complete raw email content
   receivedAt: Date,
   headers: {
     messageId: String,
@@ -233,21 +234,21 @@ app.post('/api/receive-mail', authKey, async (req, res) => {
       rawSize: mail.raw ? mail.raw.length : 0
     });
     
-    // 🚀 Send complete raw email data to frontend via real-time socket
+    // 🚀 Send complete raw email data directly to frontend via real-time socket
     io.emit('new_mail', {
       from: mail.from,
       to: mail.to,
-      raw: mail.raw,
+      raw: mail.raw, // 100% raw email content as received
       timestamp: mail.timestamp || new Date().toISOString(),
       messageId: mail.messageId,
       received: new Date().toISOString()
     });
     
-    console.log('📡 Raw email data sent to frontend via socket');
+    console.log('📡 100% Raw email data sent directly to frontend via socket');
     
     res.json({ 
       success: true, 
-      message: 'Raw email data sent via socket',
+      message: '100% raw email data sent directly via socket',
       messageId: mail.messageId 
     });
     
