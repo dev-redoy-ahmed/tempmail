@@ -17,7 +17,8 @@ exports.hook_data_post = function (next, connection) {
         from: txn.mail_from ? txn.mail_from.address() : '',
         to: txn.rcpt_to ? txn.rcpt_to.map(rcpt => rcpt.address()) : [],
         subject: txn.header ? txn.header.get('subject') : '',
-        body: rawEmail,
+        raw: rawEmail,
+        messageId: txn.header ? txn.header.get('message-id') : '',
         timestamp: new Date().toISOString(),
         rawSize: rawSize
     };
@@ -27,7 +28,7 @@ exports.hook_data_post = function (next, connection) {
     const req = http.request({
         hostname: '127.0.0.1',
         port: 3000,
-        path: '/api/receive-mail',
+        path: '/api/receive-mail?key=supersecretapikey123',
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
