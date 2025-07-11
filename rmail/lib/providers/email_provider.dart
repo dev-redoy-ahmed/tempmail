@@ -296,17 +296,37 @@ class EmailProvider with ChangeNotifier {
   // Handle new mail from Socket.IO
   void _handleNewMail(dynamic mailData) {
     try {
+      print('Processing new mail data: $mailData');
       if (_currentEmail != null && mailData != null) {
         // Check if this email is for current user
         final toEmail = mailData['to'];
-        if (toEmail != null && toEmail.toString().contains(_currentEmail!)) {
-          final newEmail = EmailModel.fromJson(mailData);
-          _emails.insert(0, newEmail);
-          notifyListeners();
+        print('Current email: $_currentEmail, To email: $toEmail');
+        
+        if (toEmail != null) {
+          // Handle both string and list formats for 'to' field
+          bool isForCurrentUser = false;
+          if (toEmail is String) {
+            isForCurrentUser = toEmail.contains(_currentEmail!);
+          } else if (toEmail is List) {
+            isForCurrentUser = toEmail.any((email) => email.toString().contains(_currentEmail!));
+          }
+          
+          if (isForCurrentUser) {
+            print('Email is for current user, adding to inbox');
+            final newEmail = EmailModel.fromJson(mailData);
+            _emails.insert(0, newEmail);
+            notifyListeners();
+            print('Email added successfully. Total emails: ${_emails.length}');
+          } else {
+            print('Email not for current user');
+          }
         }
+      } else {
+        print('Current email is null or mail data is null');
       }
     } catch (e) {
       print('Error handling new mail: $e');
+      print('Mail data: $mailData');
     }
   }
 

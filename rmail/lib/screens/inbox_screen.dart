@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/email_provider.dart';
@@ -134,53 +135,134 @@ class InboxScreen extends StatelessWidget {
 
           return Column(
             children: [
-              // Current email display
+              // Current email display with enhanced functionality
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 margin: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).colorScheme.primaryContainer,
+                      Theme.of(context).colorScheme.primaryContainer.withOpacity(0.7),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.secondary,
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                     width: 1,
                   ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Current Email:',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.email,
+                          size: 16,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Current Email Address',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.7),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const Spacer(),
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: emailProvider.isSocketConnected ? Colors.green : Colors.red,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          emailProvider.isSocketConnected ? 'Live' : 'Offline',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: emailProvider.isSocketConnected ? Colors.green : Colors.red,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
                         Expanded(
-                          child: Text(
+                          child: SelectableText(
                             emailProvider.currentEmail!,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.onPrimaryContainer,
                             ),
                           ),
                         ),
+                        const SizedBox(width: 8),
                         IconButton(
                           icon: const Icon(Icons.copy, size: 20),
                           onPressed: () {
-                            // Copy to clipboard functionality would go here
+                            Clipboard.setData(ClipboardData(text: emailProvider.currentEmail!));
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Email copied to clipboard'),
-                                duration: Duration(seconds: 2),
+                              SnackBar(
+                                content: Row(
+                                  children: [
+                                    const Icon(Icons.check_circle, color: Colors.white),
+                                    const SizedBox(width: 8),
+                                    Text('${emailProvider.currentEmail!} copied'),
+                                  ],
+                                ),
+                                backgroundColor: Colors.green,
+                                duration: const Duration(seconds: 2),
                               ),
                             );
                           },
+                          tooltip: 'Copy email address',
                         ),
+                        IconButton(
+                          icon: const Icon(Icons.swap_horiz, size: 20),
+                          onPressed: () {
+                            // Navigate to saved emails to change email
+                            DefaultTabController.of(context)?.animateTo(2);
+                          },
+                          tooltip: 'Change email',
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.inbox,
+                          size: 14,
+                          color: Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.7),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${emailProvider.emails.length} emails received',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.7),
+                          ),
+                        ),
+                        const Spacer(),
+                        if (emailProvider.emails.isNotEmpty)
+                          Text(
+                            'Last: ${_formatTime(emailProvider.emails.first.parsedDate)}',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.6),
+                            ),
+                          ),
                       ],
                     ),
                   ],
@@ -306,6 +388,22 @@ class InboxScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  // Helper function to format time
+  String _formatTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+    
+    if (difference.inMinutes < 1) {
+      return 'Just now';
+    } else if (difference.inHours < 1) {
+      return '${difference.inMinutes}m ago';
+    } else if (difference.inDays < 1) {
+      return '${difference.inHours}h ago';
+    } else {
+      return DateFormat('MMM dd').format(dateTime);
+    }
   }
 }
 

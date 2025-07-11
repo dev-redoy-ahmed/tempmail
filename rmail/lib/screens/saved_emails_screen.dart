@@ -110,28 +110,104 @@ class SavedEmailsScreen extends StatelessWidget {
                     final email = savedEmails[index];
                     final isCurrentEmail = email == emailProvider.currentEmail;
                     
-                    return _SavedEmailTile(
-                      email: email,
-                      emailData: {
-                        'email': email,
-                        'createdAt': DateTime.now().toIso8601String(),
-                      }, // Simple format for saved emails
-                      isCurrentEmail: isCurrentEmail,
-                      onTap: () {
-                        emailProvider.setCurrentEmail(email);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Switched to $email'),
-                            duration: const Duration(seconds: 2),
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      elevation: isCurrentEmail ? 4 : 1,
+                      color: isCurrentEmail 
+                          ? Theme.of(context).colorScheme.primaryContainer
+                          : null,
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: isCurrentEmail 
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.secondary,
+                          child: Icon(
+                            isCurrentEmail ? Icons.check : Icons.email,
+                            color: Colors.white,
+                            size: 20,
                           ),
-                        );
-                      },
-                      onDelete: () {
-                        _showDeleteConfirmation(context, email, {
-                          'email': email,
-                          'createdAt': DateTime.now().toIso8601String(),
-                        }, emailProvider);
-                      },
+                        ),
+                        title: Text(
+                          email,
+                          style: TextStyle(
+                            fontWeight: isCurrentEmail 
+                                ? FontWeight.bold 
+                                : FontWeight.normal,
+                            color: isCurrentEmail 
+                                ? Theme.of(context).colorScheme.onPrimaryContainer
+                                : null,
+                          ),
+                        ),
+                        subtitle: Text(
+                          isCurrentEmail 
+                              ? 'Currently active • Tap to copy'
+                              : 'Tap to switch to this email',
+                          style: TextStyle(
+                            color: isCurrentEmail 
+                                ? Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.7)
+                                : Colors.grey[600],
+                            fontSize: 12,
+                          ),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isCurrentEmail)
+                              IconButton(
+                                icon: const Icon(Icons.copy, size: 20),
+                                onPressed: () {
+                                  Clipboard.setData(ClipboardData(text: email));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('$email copied to clipboard'),
+                                      duration: const Duration(seconds: 2),
+                                    ),
+                                  );
+                                },
+                                tooltip: 'Copy email',
+                              ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, size: 20),
+                              onPressed: () {
+                                _showDeleteConfirmation(context, email, {
+                                  'email': email,
+                                  'createdAt': DateTime.now().toIso8601String(),
+                                }, emailProvider);
+                              },
+                              tooltip: 'Delete email',
+                            ),
+                          ],
+                        ),
+                        onTap: () async {
+                          if (!isCurrentEmail) {
+                            await emailProvider.setCurrentEmail(email);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Row(
+                                  children: [
+                                    const Icon(Icons.check_circle, color: Colors.white),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text('Switched to $email'),
+                                    ),
+                                  ],
+                                ),
+                                backgroundColor: Colors.green,
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          } else {
+                            // Copy to clipboard if already current
+                            Clipboard.setData(ClipboardData(text: email));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('$email copied to clipboard'),
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        },
+                      ),
                     );
                   },
                 ),
