@@ -19,11 +19,11 @@ exports.hook_data = function (next, connection) {
         messageId: txn.uuid
     };
 
-    // Send to backend API
+    // Send to backend API with API key
     const options = {
         hostname: '127.0.0.1',
         port: 3001,
-        path: '/api/receive-mail',
+        path: '/api/receive-mail?key=supersecretapikey123',
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
