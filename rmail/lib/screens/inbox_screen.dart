@@ -45,7 +45,9 @@ class InboxScreen extends StatelessWidget {
                         ),
                       )
                     : const Icon(Icons.refresh),
-                onPressed: null, // Refresh removed - emails are real-time via socket
+                onPressed: emailProvider.isLoading ? null : () {
+                  emailProvider.refreshEmails();
+                },
               );
             },
           ),

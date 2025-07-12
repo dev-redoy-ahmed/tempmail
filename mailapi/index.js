@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const redis = require('redis');
+const { MongoClient } = require('mongodb');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const crypto = require('crypto');
@@ -20,6 +21,8 @@ const io = new Server(server, {
 // === CONFIG ===
 const PORT = 3000;
 const REDIS_URL = process.env.REDIS_URL || 'redis://178.128.213.160:6379';
+const MONGODB_URL = process.env.MONGODB_URL || 'mongodb://127.0.0.1:27017';
+const MONGODB_DB_NAME = 'tempmail';
 let API_KEY = 'supersecretapikey123'; // Made mutable for updates
 const ALLOWED_DOMAINS = ['oplex.online', 'worldwides.help', 'agrovia.store', 'tempbox.pro'];
 const HARAKA_HOST_LIST_PATH = path.join(__dirname, '../haraka/config/host_list');
@@ -70,6 +73,40 @@ function isRedisConnected() {
   return redisConnected && redisClient.isOpen;
 }
 
+// === MONGODB SETUP ===
+let mongoClient;
+let mongoDb;
+let mongoConnected = false;
+
+// Connect to MongoDB
+async function connectMongoDB() {
+  try {
+    mongoClient = new MongoClient(MONGODB_URL);
+    await mongoClient.connect();
+    mongoDb = mongoClient.db(MONGODB_DB_NAME);
+    mongoConnected = true;
+    console.log('📦 Connected to MongoDB');
+    
+    // Create indexes for better performance
+    await mongoDb.collection('emails').createIndex({ deviceId: 1, createdAt: -1 });
+    await mongoDb.collection('emails').createIndex({ email: 1, createdAt: -1 });
+    await mongoDb.collection('emails').createIndex({ type: 1 });
+    
+    console.log('✅ MongoDB indexes created');
+  } catch (err) {
+    console.error('❌ Failed to connect to MongoDB:', err.message);
+    console.log('⚠️  Server will continue without MongoDB. Device-based features may be limited.');
+    mongoConnected = false;
+  }
+}
+
+connectMongoDB();
+
+// Helper function to check MongoDB connection
+function isMongoConnected() {
+  return mongoConnected && mongoClient;
+}
+
 // === REDIS DATA STRUCTURE ===
 // emails:{email} -> List of email objects (JSON strings)
 // device_emails:{deviceId} -> List of email objects (JSON strings)
@@ -81,6 +118,18 @@ function isRedisConnected() {
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('public'));
+
+// === ROUTES ===
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    redis: isRedisConnected() ? 'connected' : 'disconnected',
+    mongodb: isMongoConnected() ? 'connected' : 'disconnected',
+    timestamp: new Date().toISOString()
+  });
+});
 
 // === API KEY PROTECTOR ===
 function authKey(req, res, next) {
@@ -385,6 +434,23 @@ app.get('/generate', authKey, async (req, res) => {
           // Update device statistics
           await redisClient.hIncrBy(`device_stats:${deviceId}`, 'generated_count', 1);
           
+          // Store in MongoDB for device-based management
+          if (isMongoConnected()) {
+            const mongoEmailDoc = {
+              email: email,
+              deviceId: deviceId,
+              type: 'generated',
+              createdAt: new Date(),
+              domain: domain,
+              username: randomUser,
+              emailCount: 0,
+              lastActivity: new Date()
+            };
+            
+            await mongoDb.collection('emails').insertOne(mongoEmailDoc);
+            console.log(`📧 Generated email ${email} for device ${deviceId} stored in MongoDB`);
+          }
+          
           // Update global statistics
           await incrementCounter('generated_emails');
           
@@ -444,6 +510,23 @@ app.get('/generate/manual', authKey, async (req, res) => {
       // Update device statistics
       await redisClient.hIncrBy(`device_stats:${deviceId}`, 'generated_count', 1);
       
+      // Store in MongoDB for device-based management
+      if (isMongoConnected()) {
+        const mongoEmailDoc = {
+          email: email,
+          deviceId: deviceId,
+          type: 'generated',
+          createdAt: new Date(),
+          domain: domain,
+          username: username,
+          emailCount: 0,
+          lastActivity: new Date()
+        };
+        
+        await mongoDb.collection('emails').insertOne(mongoEmailDoc);
+        console.log(`📧 Manual email ${email} for device ${deviceId} stored in MongoDB`);
+      }
+      
       // Update global statistics
       await incrementCounter('generated_emails');
       
@@ -495,6 +578,81 @@ app.get('/inbox/:email/:index', authKey, async (req, res) => {
   } catch (err) {
     console.error('Error fetching message:', err);
     res.status(500).send('Error fetching message');
+  }
+});
+
+// Get emails by device ID from MongoDB
+app.get('/device/:deviceId/emails/mongo', authKey, async (req, res) => {
+  try {
+    const { deviceId } = req.params;
+    const { limit = 50, skip = 0 } = req.query;
+    
+    if (!isMongoConnected()) {
+      return res.status(503).json({ error: 'MongoDB connection unavailable' });
+    }
+    
+    const emails = await mongoDb.collection('emails')
+      .find({ deviceId: deviceId })
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip(parseInt(skip))
+      .toArray();
+    
+    res.json({ emails, deviceId, total: emails.length });
+  } catch (error) {
+    console.error('Error fetching device emails:', error);
+    res.status(500).json({ error: 'Failed to fetch device emails' });
+  }
+});
+
+// Get device statistics from MongoDB
+app.get('/device/:deviceId/stats/mongo', authKey, async (req, res) => {
+  try {
+    const { deviceId } = req.params;
+    
+    if (!isMongoConnected()) {
+      return res.status(503).json({ error: 'MongoDB connection unavailable' });
+    }
+    
+    const totalEmails = await mongoDb.collection('emails').countDocuments({ deviceId: deviceId });
+    const recentEmails = await mongoDb.collection('emails')
+      .find({ deviceId: deviceId })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .toArray();
+    
+    const stats = {
+      deviceId: deviceId,
+      totalEmails: totalEmails,
+      recentEmails: recentEmails,
+      lastActivity: recentEmails.length > 0 ? recentEmails[0].lastActivity : null
+    };
+    
+    res.json(stats);
+  } catch (error) {
+    console.error('Error fetching device stats:', error);
+    res.status(500).json({ error: 'Failed to fetch device stats' });
+  }
+});
+
+// Delete device emails from MongoDB
+app.delete('/device/:deviceId/emails/mongo', authKey, async (req, res) => {
+  try {
+    const { deviceId } = req.params;
+    
+    if (!isMongoConnected()) {
+      return res.status(503).json({ error: 'MongoDB connection unavailable' });
+    }
+    
+    const result = await mongoDb.collection('emails').deleteMany({ deviceId: deviceId });
+    
+    res.json({ 
+      message: `Deleted ${result.deletedCount} emails for device ${deviceId}`,
+      deletedCount: result.deletedCount 
+    });
+  } catch (error) {
+    console.error('Error deleting device emails:', error);
+    res.status(500).json({ error: 'Failed to delete device emails' });
   }
 });
 
@@ -1177,7 +1335,10 @@ app.post('/api/email-notification', authKey, async (req, res) => {
         // Find devices that have generated this email
         const deviceIds = await redisClient.sMembers(`email_devices:${recipient}`);
         
+        // Update device stats in Redis
         for (const deviceId of deviceIds) {
+          await redisClient.hIncrBy(`device_stats:${deviceId}`, 'received_count', 1);
+          
           // Emit to specific device room
           io.to(deviceId).emit('newEmail', {
             email: recipient,
@@ -1187,6 +1348,38 @@ app.post('/api/email-notification', authKey, async (req, res) => {
           });
           
           console.log(`📱 Real-time notification sent to device: ${deviceId}`);
+        }
+        
+        // Update MongoDB for device-based email tracking
+        if (isMongoConnected() && deviceIds.length > 0) {
+          for (const deviceId of deviceIds) {
+            try {
+              // Update email count and last activity for this device's generated emails
+              await mongoDb.collection('emails').updateMany(
+                { deviceId: deviceId, email: recipient },
+                { 
+                  $inc: { emailCount: 1 },
+                  $set: { lastActivity: new Date() }
+                }
+              );
+              
+              // Also store the received email details in MongoDB
+              const receivedEmailDoc = {
+                deviceId: deviceId,
+                email: recipient,
+                from: from,
+                subject: subject,
+                timestamp: new Date(timestamp),
+                type: 'received',
+                createdAt: new Date()
+              };
+              
+              await mongoDb.collection('received_emails').insertOne(receivedEmailDoc);
+              console.log(`📦 Email notification stored in MongoDB for device: ${deviceId}`);
+            } catch (mongoError) {
+              console.error(`Error updating MongoDB for device ${deviceId}:`, mongoError);
+            }
+          }
         }
         
         // Also emit to general email room for admin panel

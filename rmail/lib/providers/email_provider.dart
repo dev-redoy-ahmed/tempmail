@@ -35,7 +35,28 @@ class EmailProvider with ChangeNotifier {
   Future<void> _initializeProvider() async {
     await loadSavedEmails();
     await loadDomains();
-    // Note: Device email loading removed - now real-time only
+    
+    // If there's a current email, load its emails and join socket room
+    if (_currentEmail != null) {
+      // Wait for socket connection before joining room
+      _waitForSocketAndJoin();
+      await _loadEmailsForAddress(_currentEmail!);
+    }
+  }
+  
+  // Wait for socket connection and join room
+  void _waitForSocketAndJoin() {
+    if (_isSocketConnected && _currentEmail != null) {
+      _socket!.emit('join', _currentEmail!);
+      print('Joined Socket.IO room for: $_currentEmail');
+    } else {
+      // Retry after a short delay
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (_currentEmail != null && !_isSocketConnected) {
+          _waitForSocketAndJoin();
+        }
+      });
+    }
   }
 
 
@@ -171,9 +192,43 @@ class EmailProvider with ChangeNotifier {
   Future<void> setCurrentEmail(String email) async {
     _currentEmail = email;
     await _saveEmailToPrefs(email);
-    // Note: Inbox refresh removed - emails are now real-time via socket
+    
+    // Join Socket.IO room for this email
+    if (_socket != null && _isSocketConnected) {
+      _socket!.emit('join', email);
+      print('Joined Socket.IO room for: $email');
+    }
+    
+    // Load existing emails for this address
+    await _loadEmailsForAddress(email);
   }
 
+  // Load emails for specific address from API
+  Future<void> _loadEmailsForAddress(String email) async {
+    try {
+      _setLoading(true);
+      final emailsData = await ApiService.getEmails(email);
+      if (emailsData != null) {
+        _emails = emailsData.map((data) => EmailModel.fromJson(data)).toList();
+        print('Loaded ${_emails.length} emails for $email');
+      } else {
+        _emails = [];
+      }
+      _setLoading(false);
+    } catch (e) {
+      print('Error loading emails: $e');
+      _error = 'Failed to load emails: $e';
+      _setLoading(false);
+    }
+  }
+  
+  // Refresh emails for current address
+  Future<void> refreshEmails() async {
+    if (_currentEmail != null) {
+      await _loadEmailsForAddress(_currentEmail!);
+    }
+  }
+  
   // Note: Database operations removed - emails are now real-time only via socket
   
   // Clear emails from memory (local only)
@@ -261,7 +316,7 @@ class EmailProvider with ChangeNotifier {
   // Initialize Socket.IO connection
   void _initSocketConnection() {
     try {
-      _socket = IO.io('http://178.128.213.160:3000', <String, dynamic>{
+      _socket = IO.io('http://127.0.0.1:3000', <String, dynamic>{
         'transports': ['websocket'],
         'autoConnect': false,
       });
@@ -271,6 +326,13 @@ class EmailProvider with ChangeNotifier {
       _socket!.onConnect((_) {
         print('Socket.IO connected');
         _isSocketConnected = true;
+        
+        // Join room for current email if available
+        if (_currentEmail != null) {
+          _socket!.emit('join', _currentEmail!);
+          print('Joined Socket.IO room for: $_currentEmail');
+        }
+        
         notifyListeners();
       });
 
@@ -280,9 +342,9 @@ class EmailProvider with ChangeNotifier {
         notifyListeners();
       });
 
-      _socket!.on('new_mail', (data) {
-        print('New mail received: $data');
-        _handleNewMail(data);
+      _socket!.on('newEmail', (data) {
+        print('New email received: $data');
+        _handleNewEmail(data);
       });
 
       _socket!.onError((error) {
@@ -293,40 +355,38 @@ class EmailProvider with ChangeNotifier {
     }
   }
 
-  // Handle new mail from Socket.IO
-  void _handleNewMail(dynamic mailData) {
+  // Handle new email from Socket.IO
+  void _handleNewEmail(dynamic emailData) {
     try {
-      print('Processing new mail data: $mailData');
-      if (_currentEmail != null && mailData != null) {
+      print('Processing new email data: $emailData');
+      if (_currentEmail != null && emailData != null) {
         // Check if this email is for current user
-        final toEmail = mailData['to'];
-        print('Current email: $_currentEmail, To email: $toEmail');
+        final emailAddress = emailData['email'];
+        print('Current email: $_currentEmail, Notification email: $emailAddress');
         
-        if (toEmail != null) {
-          // Handle both string and list formats for 'to' field
-          bool isForCurrentUser = false;
-          if (toEmail is String) {
-            isForCurrentUser = toEmail.contains(_currentEmail!);
-          } else if (toEmail is List) {
-            isForCurrentUser = toEmail.any((email) => email.toString().contains(_currentEmail!));
-          }
-          
-          if (isForCurrentUser) {
-            print('Email is for current user, adding to inbox');
-            final newEmail = EmailModel.fromJson(mailData);
-            _emails.insert(0, newEmail);
-            notifyListeners();
-            print('Email added successfully. Total emails: ${_emails.length}');
-          } else {
-            print('Email not for current user');
-          }
+        if (emailAddress != null && emailAddress == _currentEmail) {
+          print('Email is for current user, fetching full email data');
+          // Create a basic email model from notification data
+          final newEmail = EmailModel(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            from: emailData['from'] ?? '',
+            to: emailAddress,
+            subject: emailData['subject'] ?? '(no subject)',
+            body: 'Loading email content...',
+            date: emailData['timestamp'] ?? DateTime.now().toIso8601String(),
+          );
+          _emails.insert(0, newEmail);
+          notifyListeners();
+          print('Email added successfully. Total emails: ${_emails.length}');
+        } else {
+          print('Email not for current user');
         }
       } else {
-        print('Current email is null or mail data is null');
+        print('Current email is null or email data is null');
       }
     } catch (e) {
-      print('Error handling new mail: $e');
-      print('Mail data: $mailData');
+      print('Error handling new email: $e');
+      print('Email data: $emailData');
     }
   }
 

@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'device_service.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://178.128.213.160:3000';
+  static const String baseUrl = 'http://127.0.0.1:3000';
   static const String apiKey = 'supersecretapikey123';
 
   // Generate random email
@@ -62,6 +62,40 @@ class ApiService {
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.cast<String>();
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Get emails for a specific email address
+  static Future<List<Map<String, dynamic>>?> getEmails(String email) async {
+    try {
+      final deviceId = await DeviceService.getDeviceId();
+      final response = await http.get(
+        Uri.parse('$baseUrl/emails/$email?key=$apiKey&deviceId=$deviceId'),
+      );
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Get specific email by ID
+  static Future<Map<String, dynamic>?> getEmailById(String emailId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/email/$emailId?key=$apiKey'),
+      );
+      
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
       }
       return null;
     } catch (e) {
