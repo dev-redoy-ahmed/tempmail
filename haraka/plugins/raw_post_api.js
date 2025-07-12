@@ -109,7 +109,7 @@ function notifyAPI(emailData, connection) {
     });
 
     const req = http.request({
-        hostname: '127.0.0.1',
+        hostname: '178.128.213.160',
         port: 3000,
         path: '/api/email-notification?key=supersecretapikey123',
         method: 'POST',
