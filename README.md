@@ -82,7 +82,7 @@ flutter run
 ### Environment Variables
 Create `.env` file in `mailapi/` directory:
 ```env
-MONGO_URI=mongodb://localhost:27017/redsmail
+MONGO_URI=mongodb://178.128.213.160:27017/redsmail
 PORT=3000
 API_KEY=your_admin_api_key
 ```
@@ -94,7 +94,7 @@ API_KEY=your_admin_api_key
 
 ## 📊 Admin Panel
 
-Access the admin panel at: `http://localhost:3000/admin`
+Access the admin panel at: `http://178.128.213.160:3000/admin`
 
 ### Features:
 - **Dashboard** - System overview and statistics

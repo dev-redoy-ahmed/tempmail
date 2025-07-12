@@ -1413,7 +1413,7 @@ app.post('/api/email-notification', authKey, async (req, res) => {
 // === START SERVER ===
 server.listen(PORT, () => {
   console.log(`🚀 API & Socket.IO server running on port ${PORT}`);
-  console.log(`📊 Admin panel available at: http://localhost:${PORT}/admin`);
+  console.log(`📊 Admin panel available at: http://178.128.213.160:${PORT}/admin`);
   console.log(`📦 Using Redis database at: ${REDIS_URL}`);
 });
 

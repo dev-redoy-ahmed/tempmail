@@ -7,7 +7,7 @@ async function testMongoDB() {
   
   try {
     // Test MongoDB connection
-    const client = new MongoClient('mongodb://127.0.0.1:27017');
+    const client = new MongoClient('mongodb://178.128.213.160:27017');
     await client.connect();
     const db = client.db('tempmail');
     
@@ -24,7 +24,7 @@ async function testMongoDB() {
     
     // Test health endpoint
     try {
-      const healthResponse = await axios.get('http://localhost:3000/health');
+      const healthResponse = await axios.get('http://178.128.213.160:3000/health');
       console.log('✅ Health check:', healthResponse.data);
     } catch (error) {
       console.log('❌ Health check failed:', error.message);
@@ -32,13 +32,13 @@ async function testMongoDB() {
     
     // Test email generation with device ID
     try {
-      const generateResponse = await axios.get('http://localhost:3000/generate?deviceId=test123', {
+      const generateResponse = await axios.get('http://178.128.213.160:3000/generate?deviceId=test123', {
         headers: { 'Authorization': 'supersecretapikey123' }
       });
       console.log('✅ Email generation:', generateResponse.data);
       
       // Test device stats
-      const statsResponse = await axios.get('http://localhost:3000/device/test123/stats/mongo', {
+      const statsResponse = await axios.get('http://178.128.213.160:3000/device/test123/stats/mongo', {
         headers: { 'Authorization': 'supersecretapikey123' }
       });
       console.log('✅ Device stats:', statsResponse.data);

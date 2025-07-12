@@ -45,7 +45,7 @@ node index.js
 ### 2. Access Admin Panel
 Open your browser and navigate to:
 ```
-http://localhost:3000/admin
+http://178.128.213.160:3000/admin
 ```
 
 ## Usage

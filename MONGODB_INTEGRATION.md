@@ -135,18 +135,18 @@ API_KEY=supersecretapikey123
 
 ### Generate Email for Device
 ```bash
-curl -X GET "http://localhost:3000/generate?deviceId=mobile123" \
+curl -X GET "http://178.128.213.160:3000/generate?deviceId=mobile123" \
   -H "Authorization: supersecretapikey123"
 ```
 
 ### Get Device Statistics
 ```bash
-curl -X GET "http://localhost:3000/device/mobile123/stats/mongo" \
+curl -X GET "http://178.128.213.160:3000/device/mobile123/stats/mongo" \
   -H "Authorization: supersecretapikey123"
 ```
 
 ### Get Device Emails
 ```bash
-curl -X GET "http://localhost:3000/device/mobile123/emails/mongo?limit=10" \
+curl -X GET "http://178.128.213.160:3000/device/mobile123/emails/mongo?limit=10" \
   -H "Authorization: supersecretapikey123"
 ```
