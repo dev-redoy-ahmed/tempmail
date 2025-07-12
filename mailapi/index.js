@@ -1164,6 +1164,50 @@ app.get('/admin/test-system', authKey, async (req, res) => {
   res.json(results);
 });
 
+// Email notification endpoint for Haraka
+app.post('/api/email-notification', authKey, async (req, res) => {
+  try {
+    const { action, recipients, from, subject, timestamp } = req.body;
+    
+    if (action === 'new_email') {
+      console.log(`📧 New email notification: ${from} -> ${recipients.join(', ')} | Subject: ${subject}`);
+      
+      // Emit real-time notification to connected clients
+      for (const recipient of recipients) {
+        // Find devices that have generated this email
+        const deviceIds = await redisClient.sMembers(`email_devices:${recipient}`);
+        
+        for (const deviceId of deviceIds) {
+          // Emit to specific device room
+          io.to(deviceId).emit('newEmail', {
+            email: recipient,
+            from: from,
+            subject: subject,
+            timestamp: timestamp
+          });
+          
+          console.log(`📱 Real-time notification sent to device: ${deviceId}`);
+        }
+        
+        // Also emit to general email room for admin panel
+        io.to(`email_${recipient}`).emit('newEmail', {
+          email: recipient,
+          from: from,
+          subject: subject,
+          timestamp: timestamp
+        });
+      }
+      
+      res.json({ success: true, message: 'Notification processed' });
+    } else {
+      res.status(400).json({ error: 'Unknown action' });
+    }
+  } catch (error) {
+    console.error('❌ Email notification error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // === START SERVER ===
 server.listen(PORT, () => {
   console.log(`🚀 API & Socket.IO server running on port ${PORT}`);

@@ -6,7 +6,8 @@
     "axios": "^1.7.9",
     "haraka": "^0.0.33",
     "mailparser": "^3.7.4",
-    "nodemailer": "^6.9.18"
+    "nodemailer": "^6.9.18",
+    "redis": "^4.6.0"
   },
   "repository": "",
   "license": "MIT"
