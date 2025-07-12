@@ -20,8 +20,13 @@ const io = new Server(server, {
 
 // === CONFIG ===
 const PORT = 3000;
+
+// DUAL DATABASE ARCHITECTURE:
+// Redis: Handles received emails, real-time operations, and API responses
 const REDIS_URL = process.env.REDIS_URL || 'redis://178.128.213.160:6379';
-const MONGODB_URL = process.env.MONGODB_URL || 'mongodb://127.0.0.1:27017';
+
+// MongoDB Atlas: Stores generated/custom emails for app integration and analytics
+const MONGODB_URL = process.env.MONGODB_URL || 'mongodb+srv://turbomail:we1we2we3@turbomail.gjohjma.mongodb.net/tempmail?retryWrites=true&w=majority&appName=turbomail';
 const MONGODB_DB_NAME = 'tempmail';
 let API_KEY = 'supersecretapikey123'; // Made mutable for updates
 const ALLOWED_DOMAINS = ['oplex.online', 'worldwides.help', 'agrovia.store', 'tempbox.pro'];
@@ -88,11 +93,10 @@ async function connectMongoDB() {
     console.log('📦 Connected to MongoDB');
     
     // Create indexes for better performance
-    await mongoDb.collection('emails').createIndex({ deviceId: 1, createdAt: -1 });
-    await mongoDb.collection('emails').createIndex({ email: 1, createdAt: -1 });
-    await mongoDb.collection('emails').createIndex({ type: 1 });
+    await mongoDb.collection('emails').createIndex({ deviceId: 1, email: 1 });
+    await mongoDb.collection('emails').createIndex({ createdAt: 1 }, { expireAfterSeconds: 86400 }); // 24 hours TTL
     
-    console.log('✅ MongoDB indexes created');
+    console.log('✅ MongoDB indexes created successfully');
   } catch (err) {
     console.error('❌ Failed to connect to MongoDB:', err.message);
     console.log('⚠️  Server will continue without MongoDB. Device-based features may be limited.');
@@ -1024,6 +1028,23 @@ app.get('/admin/stats', authKey, async (req, res) => {
     const deviceKeys = await redisClient.keys('device_stats:*');
     const uniqueDevices = deviceKeys.length;
     
+    let mongoStatus = { connected: false };
+    if (isMongoConnected()) {
+      try {
+        const emailsCount = await mongoDb.collection('emails').countDocuments();
+        mongoStatus = {
+          connected: true,
+          collections: {
+            emails: emailsCount
+          }
+        };
+      } catch (error) {
+        mongoStatus = { connected: false, error: error.message };
+      }
+    } else {
+      mongoStatus = { connected: false, error: 'Not connected' };
+    }
+    
     const stats = {
       timestamp: new Date().toISOString(),
       emails: {
@@ -1037,7 +1058,8 @@ app.get('/admin/stats', authKey, async (req, res) => {
         uniqueDevices: uniqueDevices
       },
       domains: ALLOWED_DOMAINS.length,
-      connectedClients: io.engine.clientsCount || 0
+      connectedClients: io.engine.clientsCount || 0,
+      mongodb: mongoStatus
     };
     
     res.json(stats);
@@ -1350,37 +1372,24 @@ app.post('/api/email-notification', authKey, async (req, res) => {
           console.log(`📱 Real-time notification sent to device: ${deviceId}`);
         }
         
-        // Update MongoDB for device-based email tracking
-        if (isMongoConnected() && deviceIds.length > 0) {
-          for (const deviceId of deviceIds) {
-            try {
-              // Update email count and last activity for this device's generated emails
-              await mongoDb.collection('emails').updateMany(
-                { deviceId: deviceId, email: recipient },
-                { 
-                  $inc: { emailCount: 1 },
-                  $set: { lastActivity: new Date() }
-                }
-              );
-              
-              // Also store the received email details in MongoDB
-              const receivedEmailDoc = {
-                deviceId: deviceId,
-                email: recipient,
-                from: from,
-                subject: subject,
-                timestamp: new Date(timestamp),
-                type: 'received',
-                createdAt: new Date()
-              };
-              
-              await mongoDb.collection('received_emails').insertOne(receivedEmailDoc);
-              console.log(`📦 Email notification stored in MongoDB for device: ${deviceId}`);
-            } catch (mongoError) {
-              console.error(`Error updating MongoDB for device ${deviceId}:`, mongoError);
-            }
-          }
-        }
+        // Update MongoDB email count for generated emails only
+         if (isMongoConnected() && deviceIds.length > 0) {
+           for (const deviceId of deviceIds) {
+             try {
+               // Update email count and last activity for this device's generated emails
+               await mongoDb.collection('emails').updateMany(
+                 { deviceId: deviceId, email: recipient },
+                 { 
+                   $inc: { emailCount: 1 },
+                   $set: { lastActivity: new Date() }
+                 }
+               );
+               console.log(`📦 Updated email count in MongoDB for device: ${deviceId}`);
+             } catch (mongoError) {
+               console.error(`Error updating MongoDB for device ${deviceId}:`, mongoError);
+             }
+           }
+         }
         
         // Also emit to general email room for admin panel
         io.to(`email_${recipient}`).emit('newEmail', {

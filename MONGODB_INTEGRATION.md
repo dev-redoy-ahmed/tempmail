@@ -1,10 +1,10 @@
-# MongoDB Integration for TempMail API
+# MongoDB Atlas Integration for TempMail API
 
 ## Overview
 
 The TempMail API now supports a dual-database architecture:
 - **Redis**: Used for real-time email reception and temporary storage
-- **MongoDB**: Used for persistent email generation and device-based management
+- **MongoDB Atlas**: Used for persistent email generation and device-based management
 
 ## Database Roles
 
@@ -13,8 +13,9 @@ The TempMail API now supports a dual-database architecture:
 - Handles real-time Socket.IO notifications
 - Manages email queues and statistics
 - Provides fast access for email retrieval
+- Stores received email content
 
-### MongoDB (Email Generation & Device Management)
+### MongoDB Atlas (Email Generation & Device Management)
 - Stores generated email addresses with device associations
 - Tracks email statistics per device
 - Provides persistent storage for device-based features
@@ -61,41 +62,44 @@ Now shows both Redis and MongoDB connection status.
 ## MongoDB Collections
 
 ### `emails` Collection
-Stores generated email addresses:
+Stores generated email addresses with device tracking:
 ```json
 {
   "_id": "ObjectId",
-  "email": "abc123@domain.com",
-  "deviceId": "device123",
-  "type": "generated",
-  "createdAt": "2024-01-01T00:00:00.000Z",
-  "domain": "domain.com",
-  "username": "abc123",
-  "emailCount": 5,
-  "lastActivity": "2024-01-01T12:00:00.000Z"
+  "deviceId": "unique-device-identifier",
+  "email": "generated@domain.com",
+  "type": "generated|custom",
+  "emailCount": 0,
+  "lastActivity": "2024-01-01T00:00:00.000Z",
+  "createdAt": "2024-01-01T00:00:00.000Z"
 }
 ```
 
-### `received_emails` Collection
-Stores received email notifications:
-```json
-{
-  "_id": "ObjectId",
-  "deviceId": "device123",
-  "email": "abc123@domain.com",
-  "from": "sender@example.com",
-  "subject": "Test Email",
-  "timestamp": "2024-01-01T12:00:00.000Z",
-  "type": "received",
-  "createdAt": "2024-01-01T12:00:00.000Z"
-}
-```
+**Note**: Received emails are stored in Redis for real-time access and temporary storage.
 
 ## Configuration
 
 ### Environment Variables
-- `MONGODB_URL`: MongoDB connection string (default: `mongodb://127.0.0.1:27017`)
-- `REDIS_URL`: Redis connection string (default: `redis://178.128.213.160:6379`)
+Set the following environment variables or create a `.env` file:
+
+```bash
+# MongoDB Atlas Connection
+MONGODB_URL=mongodb+srv://<username>:<password>@<cluster-name>.mongodb.net/tempmail?retryWrites=true&w=majority
+
+# Redis Connection (existing)
+REDIS_URL=redis://178.128.213.160:6379
+
+# API Configuration
+PORT=3000
+API_KEY=supersecretapikey123
+```
+
+### MongoDB Atlas Setup
+1. Create a MongoDB Atlas account at https://www.mongodb.com/atlas
+2. Create a new cluster
+3. Create a database user with read/write permissions
+4. Whitelist your server's IP address
+5. Get your connection string and replace the placeholders in MONGODB_URL
 
 ### Database Names
 - MongoDB Database: `tempmail`
