@@ -316,7 +316,7 @@ class EmailProvider with ChangeNotifier {
   // Initialize Socket.IO connection
   void _initSocketConnection() {
     try {
-      _socket = IO.io('http://127.0.0.1:3000', <String, dynamic>{
+      _socket = IO.io('http://178.128.213.160:3000', <String, dynamic>{
         'transports': ['websocket'],
         'autoConnect': false,
       });
