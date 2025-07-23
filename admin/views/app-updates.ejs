@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Updates Management - TurboMail Admin</title>
+    <link rel="stylesheet" href="/styles.css">
+    <style>
+        .update-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+        
+        .update-card.active {
+            border-left-color: #48bb78;
+            background: linear-gradient(135deg, #f0fff4 0%, #ffffff 100%);
+        }
+        
+        .update-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .version-info {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .version-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2d3748;
+        }
+        
+        .version-code {
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        
+        .status-active {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .status-inactive {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+        
+        .status-force {
+            background: #f56565;
+            color: white;
+        }
+        
+        .status-normal {
+            background: #ed8936;
+            color: white;
+        }
+        
+        .update-message {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 3px solid #667eea;
+        }
+        
+        .update-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .btn-activate {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .btn-activate:hover {
+            background: #38a169;
+        }
+        
+        .btn-delete {
+            background: #f56565;
+            color: white;
+        }
+        
+        .btn-delete:hover {
+            background: #e53e3e;
+        }
+        
+        .create-form {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .no-updates {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+        
+        .global-actions {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="logo">
+                <h2>📧 TurboMail</h2>
+                <p>Admin Panel</p>
+            </div>
+            <nav>
+                <a href="/dashboard">📊 Dashboard</a>
+                <a href="/domains">🌐 Domain Management</a>
+                <a href="/api-management">🔑 API Management</a>
+                <a href="/ads-management">📱 Ads Management</a>
+                <a href="/ads-settings">⚙️ Ads Settings</a>
+                <a href="/app-updates" class="active">🔄 App Updates</a>
+                <a href="/logout">🚪 Logout</a>
+            </nav>
+        </div>
+
+        <div class="main-content">
+            <div class="header">
+                <h1>📱 App Updates Management</h1>
+                <p>Manage app version updates, force updates, and normal updates</p>
+            </div>
+
+            <% if (success) { %>
+                <div class="alert alert-success">
+                    <%- success %>
+                </div>
+            <% } %>
+
+            <% if (error) { %>
+                <div class="alert alert-error">
+                    <%- error %>
+                </div>
+            <% } %>
+
+            <!-- Global Actions -->
+            <div class="global-actions">
+                <form method="POST" action="/app-updates/deactivate" style="display: inline;">
+                    <button type="submit" class="btn btn-secondary" onclick="return confirm('Are you sure you want to deactivate all updates?')">
+                        🚫 Deactivate All Updates
+                    </button>
+                </form>
+            </div>
+
+            <!-- Create New Update Form -->
+            <div class="create-form">
+                <h3>📝 Create/Update App Version</h3>
+                <form method="POST" action="/app-updates/create">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="versionName">Version Name *</label>
+                            <input type="text" id="versionName" name="versionName" placeholder="e.g., 1.0.0" required>
+                            <small>Example: 1.0.0, 2.1.3, etc.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="versionCode">Version Code *</label>
+                            <input type="number" id="versionCode" name="versionCode" placeholder="e.g., 1" required>
+                            <small>Numeric version code (must be unique)</small>
+                        </div>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="isForceUpdate" name="isForceUpdate" value="true">
+                            <label for="isForceUpdate">🚨 Force Update</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="isNormalUpdate" name="isNormalUpdate" value="true">
+                            <label for="isNormalUpdate">📢 Normal Update</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="updateMessage">Update Message</label>
+                        <textarea id="updateMessage" name="updateMessage" rows="3" placeholder="What's new in this version?"></textarea>
+                        <small>Message to show to users about this update</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="updateLink">Update Link</label>
+                        <input type="url" id="updateLink" name="updateLink" placeholder="https://play.google.com/store/apps/details?id=your.app">
+                        <small>Link to app store or download page</small>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        ✅ Create/Update Version
+                    </button>
+                </form>
+            </div>
+
+            <!-- Active Update -->
+            <% if (activeUpdate) { %>
+                <div class="section">
+                    <h3>🟢 Currently Active Update</h3>
+                    <div class="update-card active">
+                        <div class="update-header">
+                            <div class="version-info">
+                                <span class="version-name"><%= activeUpdate.versionName %></span>
+                                <span class="version-code">v<%= activeUpdate.versionCode %></span>
+                                <span class="status-badge status-active">ACTIVE</span>
+                                <% if (activeUpdate.isForceUpdate) { %>
+                                    <span class="status-badge status-force">FORCE UPDATE</span>
+                                <% } %>
+                                <% if (activeUpdate.isNormalUpdate) { %>
+                                    <span class="status-badge status-normal">NORMAL UPDATE</span>
+                                <% } %>
+                            </div>
+                        </div>
+                        
+                        <% if (activeUpdate.updateMessage) { %>
+                            <div class="update-message">
+                                <strong>Update Message:</strong><br>
+                                <%= activeUpdate.updateMessage %>
+                            </div>
+                        <% } %>
+                        
+                        <% if (activeUpdate.updateLink) { %>
+                            <p><strong>Update Link:</strong> <a href="<%= activeUpdate.updateLink %>" target="_blank"><%= activeUpdate.updateLink %></a></p>
+                        <% } %>
+                        
+                        <p><strong>Created:</strong> <%= new Date(activeUpdate.createdAt).toLocaleString() %></p>
+                    </div>
+                </div>
+            <% } else { %>
+                <div class="section">
+                    <h3>🟢 Currently Active Update</h3>
+                    <div class="no-updates">
+                        <p>No active update configured. Users will not see any update prompts.</p>
+                    </div>
+                </div>
+            <% } %>
+
+            <!-- All Updates -->
+            <div class="section">
+                <h3>📋 All App Updates</h3>
+                
+                <% if (updates && updates.length > 0) { %>
+                    <% updates.forEach(update => { %>
+                        <div class="update-card <%= update.isActive ? 'active' : '' %>">
+                            <div class="update-header">
+                                <div class="version-info">
+                                    <span class="version-name"><%= update.versionName %></span>
+                                    <span class="version-code">v<%= update.versionCode %></span>
+                                    <span class="status-badge <%= update.isActive ? 'status-active' : 'status-inactive' %>">
+                                        <%= update.isActive ? 'ACTIVE' : 'INACTIVE' %>
+                                    </span>
+                                    <% if (update.isForceUpdate) { %>
+                                        <span class="status-badge status-force">FORCE UPDATE</span>
+                                    <% } %>
+                                    <% if (update.isNormalUpdate) { %>
+                                        <span class="status-badge status-normal">NORMAL UPDATE</span>
+                                    <% } %>
+                                </div>
+                            </div>
+                            
+                            <% if (update.updateMessage) { %>
+                                <div class="update-message">
+                                    <strong>Update Message:</strong><br>
+                                    <%= update.updateMessage %>
+                                </div>
+                            <% } %>
+                            
+                            <% if (update.updateLink) { %>
+                                <p><strong>Update Link:</strong> <a href="<%= update.updateLink %>" target="_blank"><%= update.updateLink %></a></p>
+                            <% } %>
+                            
+                            <p><strong>Created:</strong> <%= new Date(update.createdAt).toLocaleString() %></p>
+                            
+                            <div class="update-actions">
+                                <% if (!update.isActive) { %>
+                                    <form method="POST" action="/app-updates/activate" style="display: inline;">
+                                        <input type="hidden" name="updateId" value="<%= update._id %>">
+                                        <button type="submit" class="btn btn-activate">
+                                            ✅ Activate
+                                        </button>
+                                    </form>
+                                <% } %>
+                                
+                                <form method="POST" action="/app-updates/delete" style="display: inline;">
+                                    <input type="hidden" name="updateId" value="<%= update._id %>">
+                                    <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure you want to delete this update?')">
+                                        🗑️ Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    <% }); %>
+                <% } else { %>
+                    <div class="no-updates">
+                        <p>No app updates created yet. Create your first update above.</p>
+                    </div>
+                <% } %>
+            </div>
+
+            <!-- API Information -->
+            <div class="section">
+                <h3>🔗 API Information</h3>
+                <div class="api-info">
+                    <p><strong>Flutter App API Endpoint:</strong></p>
+                    <code>GET /api/app-update</code>
+                    <p>This endpoint returns the currently active update information for your Flutter app to check and show update popups.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/admin.js"></script>
+</body>
+</html>

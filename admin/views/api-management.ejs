@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Management - TempMail Admin</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-envelope"></i> TempMail</h2>
+        </div>
+        <nav class="sidebar-menu">
+            <a href="/dashboard" class="menu-item">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            <a href="/domains" class="menu-item">
+                <i class="fas fa-globe"></i> Manage Domains
+            </a>
+            <a href="/api-management" class="menu-item active">
+                <i class="fas fa-key"></i> API Management
+            </a>
+            <a href="/ads-management" class="menu-item">
+                <i class="fas fa-ad"></i> Ads Management
+            </a>
+            <a href="/ads-settings" class="menu-item">
+                <i class="fas fa-cog"></i> Ads Settings
+            </a>
+            <a href="/app-updates" class="menu-item">
+                <i class="fas fa-mobile-alt"></i> App Updates
+            </a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <header class="header">
+            <h1><i class="fas fa-key"></i> API Management</h1>
+            <a href="/logout" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </header>
+
+        <div class="content">
+            <!-- Alerts -->
+            <% if (success) { %>
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> <%= success %>
+                </div>
+            <% } %>
+            
+            <% if (error) { %>
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> <%= error %>
+                </div>
+            <% } %>
+
+            <!-- API Endpoints -->
+            <div class="card">
+                <h3><i class="fas fa-code"></i> Available API Endpoints</h3>
+                <p style="color: #ccc; margin-bottom: 20px;">
+                    Base URL: <code style="color: #00ff88;">http://localhost:3001</code>
+                </p>
+                
+                <% apiEndpoints.forEach(endpoint => { %>
+                    <div class="api-endpoint">
+                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <span class="api-method <%= endpoint.method.toLowerCase() %>"><%= endpoint.method %></span>
+                            <span class="api-url"><%= endpoint.endpoint %></span>
+                        </div>
+                        <div style="color: #ccc; font-size: 14px;">
+                            <%= endpoint.name %>
+                        </div>
+                        <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                            Example: <code style="color: #00ff88;">http://localhost:3001<%= endpoint.endpoint %>?key=YOUR_API_KEY</code>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+
+            <!-- Update Master API Key -->
+            <div class="card">
+                <h3><i class="fas fa-key"></i> Master API Key</h3>
+                <p style="color: #ccc; margin-bottom: 20px;">
+                    One key for all API endpoints. This key is required for all API calls.
+                </p>
+                
+                <% if (masterApiKey) { %>
+                    <div style="background: #0f0f0f; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 3px solid #00ff88;">
+                        <strong style="color: #00ff88;">Current Master API Key:</strong><br>
+                        <code style="color: #fff; font-family: 'Courier New', monospace; font-size: 16px;">
+                            <%= masterApiKey %>
+                        </code>
+                    </div>
+                <% } else { %>
+                    <div style="background: #0f0f0f; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 3px solid #ff4757;">
+                        <strong style="color: #ff4757;">No API Key Set</strong>
+                    </div>
+                <% } %>
+                
+                <form method="POST" action="/api-key/update">
+                    <div class="form-group">
+                        <label for="apiKey">New Master API Key</label>
+                        <input type="text" id="apiKey" name="apiKey" class="form-control" 
+                               placeholder="Enter new master API key" value="<%= masterApiKey || '' %>" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Update Master API Key
+                    </button>
+                </form>
+            </div>
+
+            <!-- API Usage Examples -->
+            <div class="card">
+                <h3><i class="fas fa-code"></i> API Usage Examples</h3>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #00ff88; margin-bottom: 10px;">1. Generate Random Email</h4>
+                    <div style="background: #0f0f0f; padding: 15px; border-radius: 5px; border-left: 3px solid #00ff88;">
+                        <code style="color: #ccc;">GET http://localhost:3001/generate?key=<%= masterApiKey || 'YOUR_MASTER_API_KEY' %></code>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #00ff88; margin-bottom: 10px;">2. Generate Manual Email</h4>
+                    <div style="background: #0f0f0f; padding: 15px; border-radius: 5px; border-left: 3px solid #00ff88;">
+                        <code style="color: #ccc;">GET http://localhost:3001/generate/manual?username=test&domain=oplex.online&key=<%= masterApiKey || 'YOUR_MASTER_API_KEY' %></code>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #00ff88; margin-bottom: 10px;">3. View Inbox</h4>
+                    <div style="background: #0f0f0f; padding: 15px; border-radius: 5px; border-left: 3px solid #00ff88;">
+                        <code style="color: #ccc;">GET http://localhost:3001/inbox/test@oplex.online?key=<%= masterApiKey || 'YOUR_MASTER_API_KEY' %></code>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #00ff88; margin-bottom: 10px;">4. Delete Message/Inbox</h4>
+                    <div style="background: #0f0f0f; padding: 15px; border-radius: 5px; border-left: 3px solid #ff4757;">
+                        <code style="color: #ccc;">DELETE http://localhost:3001/delete/test@oplex.online?key=<%= masterApiKey || 'YOUR_MASTER_API_KEY' %></code>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API Info -->
+            <div class="card">
+                <h3><i class="fas fa-info-circle"></i> API Configuration</h3>
+                <p style="color: #ccc; margin-bottom: 15px;">
+                    The master API key is automatically synced with the Mail API server. 
+                    Changes made here will update the <code>MASTER_API_KEY</code> constant in:
+                </p>
+                <ul style="color: #ccc; margin-left: 20px;">
+                    <li><strong>Mail API:</strong> <code>mail-api/index.js</code></li>
+                </ul>
+                <div style="margin-top: 15px; padding: 15px; background: #0f0f0f; border-radius: 5px; border-left: 3px solid #00ff88;">
+                    <strong style="color: #00ff88;">✅ Simplified:</strong>
+                    <p style="color: #ccc; margin: 5px 0 0 0;">
+                        Now using ONE master API key for all endpoints instead of multiple keys. 
+                        This makes it much easier to manage and use in your applications.
+                    </p>
+                </div>
+                <div style="margin-top: 15px; padding: 15px; background: #0f0f0f; border-radius: 5px; border-left: 3px solid #ffa502;">
+                    <strong style="color: #ffa502;">⚠️ Security Note:</strong>
+                    <p style="color: #ccc; margin: 5px 0 0 0;">
+                        Keep your master API key secure and don't share it publicly. 
+                        Consider using environment variables for production deployments.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

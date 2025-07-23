@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ads Management - TurboMail Admin</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .ads-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .ads-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .ads-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .ad-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 1px solid #e1e5e9;
+            transition: all 0.3s ease;
+        }
+        
+        .ad-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        .ad-type-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f8f9fa;
+        }
+        
+        .ad-type-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 20px;
+            color: white;
+        }
+        
+        .banner-icon { background: linear-gradient(135deg, #ff6b6b, #ee5a24); }
+        .interstitial-icon { background: linear-gradient(135deg, #4834d4, #686de0); }
+        .native-icon { background: linear-gradient(135deg, #00d2d3, #54a0ff); }
+        .appopen-icon { background: linear-gradient(135deg, #ff9ff3, #f368e0); }
+        .reward-icon { background: linear-gradient(135deg, #feca57, #ff9ff3); }
+        
+        .ad-type-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+        
+        .ad-type-desc {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin: 2px 0 0 0;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .form-textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        .form-select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .checkbox-input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .update-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .update-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: auto;
+        }
+        
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .current-id {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #495057;
+            margin-bottom: 10px;
+            word-break: break-all;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 5px;
+            margin-bottom: 30px;
+        }
+        
+        .nav-tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #6c757d;
+        }
+        
+        .nav-tab.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">
+            <i class="fas fa-envelope"></i>
+            <span>TurboMail Admin</span>
+        </div>
+        <nav class="nav-menu">
+            <a href="/dashboard" class="nav-item">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="/domains" class="nav-item">
+                <i class="fas fa-globe"></i>
+                <span>Domain Management</span>
+            </a>
+            <a href="/api-management" class="nav-item">
+                <i class="fas fa-key"></i>
+                <span>API Management</span>
+            </a>
+            <a href="/ads-management" class="nav-item active">
+                <i class="fas fa-ad"></i>
+                <span>Ads Management</span>
+            </a>
+            <a href="/ads-settings" class="nav-item">
+                <i class="fas fa-cog"></i>
+                <span>Ads Settings</span>
+            </a>
+            <a href="/app-updates" class="nav-item">
+                <i class="fas fa-mobile-alt"></i>
+                <span>App Updates</span>
+            </a>
+            <a href="/logout" class="nav-item">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div class="ads-container">
+            <div class="ads-header">
+                <h1><i class="fas fa-ad"></i> Ads Management</h1>
+                <p>Configure and manage advertisement IDs for your TurboMail app</p>
+            </div>
+
+            <% if (success) { %>
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> <%- success %>
+                </div>
+            <% } %>
+
+            <% if (error) { %>
+                <div class="alert alert-error">
+                    <i class="fas fa-exclamation-circle"></i> <%- error %>
+                </div>
+            <% } %>
+
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="showTab('android')">
+                    <i class="fab fa-android"></i> Android Ads
+                </button>
+                <button class="nav-tab" onclick="showTab('ios')">
+                    <i class="fab fa-apple"></i> iOS Ads
+                </button>
+                <button class="nav-tab" onclick="showTab('settings')">
+                    <i class="fas fa-cog"></i> Settings
+                </button>
+            </div>
+
+            <div id="android-tab" class="tab-content">
+                <div class="ads-grid">
+                    <!-- Banner Ad -->
+                    <div class="ad-card">
+                        <div class="ad-type-header">
+                            <div class="ad-type-icon banner-icon">
+                                <i class="fas fa-rectangle-ad"></i>
+                            </div>
+                            <div>
+                                <h3 class="ad-type-title">Banner Ad</h3>
+                                <p class="ad-type-desc">Home screen bottom banner</p>
+                            </div>
+                            <span class="status-badge <%= adsConfig.banner?.isActive ? 'status-active' : 'status-inactive' %>">
+                                <%= adsConfig.banner?.isActive ? 'Active' : 'Inactive' %>
+                            </span>
+                        </div>
+                        
+                        <form action="/ads-management/update" method="POST">
+                            <input type="hidden" name="adType" value="banner">
+                            <input type="hidden" name="platform" value="android">
+                            
+                            <div class="form-group">
+                                <label class="form-label">Current Banner ID:</label>
+                                <div class="current-id">
+                                    <%= adsConfig.banner?.id || 'Not set' %>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">New Banner Ad ID:</label>
+                                <input type="text" name="adId" class="form-input" 
+                                       placeholder="ca-app-pub-xxxxxxxxxxxxxxxx/xxxxxxxxxx"
+                                       value="<%= adsConfig.banner?.id || '' %>">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Description:</label>
+                                <textarea name="description" class="form-input form-textarea" 
+                                          placeholder="Banner ad for home screen bottom"><%- adsConfig.banner?.description || '' %></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <div class="checkbox-group">
+                                    <input type="checkbox" name="isActive" value="true" class="checkbox-input" 
+                                           <%= adsConfig.banner?.isActive ? 'checked' : '' %>>
+                                    <label class="form-label">Active</label>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="update-btn">
+                                <i class="fas fa-save"></i> Update Banner Ad
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Interstitial Ad -->
+                    <div class="ad-card">
+                        <div class="ad-type-header">
+                            <div class="ad-type-icon interstitial-icon">
+                                <i class="fas fa-expand"></i>
+                            </div>
+                            <div>
+                                <h3 class="ad-type-title">Interstitial Ad</h3>
+                                <p class="ad-type-desc">Full screen ads for actions</p>
+                            </div>
+                            <span class="status-badge <%= adsConfig.interstitial?.isActive ? 'status-active' : 'status-inactive' %>">
+                                <%= adsConfig.interstitial?.isActive ? 'Active' : 'Inactive' %>
+                            </span>
+                        </div>
+                        
+                        <form action="/ads-management/update" method="POST">
+                            <input type="hidden" name="adType" value="interstitial">
+                            <input type="hidden" name="platform" value="android">
+                            
+                            <div class="form-group">
+                                <label class="form-label">Current Interstitial ID:</label>
+                                <div class="current-id">
+                                    <%= adsConfig.interstitial?.id || 'Not set' %>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">New Interstitial Ad ID:</label>
+                                <input type="text" name="adId" class="form-input" 
+                                       placeholder="ca-app-pub-xxxxxxxxxxxxxxxx/xxxxxxxxxx"
+                                       value="<%= adsConfig.interstitial?.id || '' %>">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Description:</label>
+                                <textarea name="description" class="form-input form-textarea" 
+                                          placeholder="Interstitial ad for generate email and email history actions"><%- adsConfig.interstitial?.description || '' %></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <div class="checkbox-group">
+                                    <input type="checkbox" name="isActive" value="true" class="checkbox-input" 
+                                           <%= adsConfig.interstitial?.isActive ? 'checked' : '' %>>
+                                    <label class="form-label">Active</label>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="update-btn">
+                                <i class="fas fa-save"></i> Update Interstitial Ad
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Native Ad -->
+                    <div class="ad-card">
+                        <div class="ad-type-header">
+                            <div class="ad-type-icon native-icon">
+                                <i class="fas fa-th-large"></i>
+                            </div>
+                            <div>
+                                <h3 class="ad-type-title">Native Ad</h3>
+                                <p class="ad-type-desc">Inbox screen bottom native ad</p>
+                            </div>
+                            <span class="status-badge <%= adsConfig.native?.isActive ? 'status-active' : 'status-inactive' %>">
+                                <%= adsConfig.native?.isActive ? 'Active' : 'Inactive' %>
+                            </span>
+                        </div>
+                        
+                        <form action="/ads-management/update" method="POST">
+                            <input type="hidden" name="adType" value="native">
+                            <input type="hidden" name="platform" value="android">
+                            
+                            <div class="form-group">
+                                <label class="form-label">Current Native ID:</label>
+                                <div class="current-id">
+                                    <%= adsConfig.native?.id || 'Not set' %>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">New Native Ad ID:</label>
+                                <input type="text" name="adId" class="form-input" 
+                                       placeholder="ca-app-pub-xxxxxxxxxxxxxxxx/xxxxxxxxxx"
+                                       value="<%= adsConfig.native?.id || '' %>">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Description:</label>
+                                <textarea name="description" class="form-input form-textarea" 
+                                          placeholder="Native ad for inbox screen bottom"><%- adsConfig.native?.description || '' %></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <div class="checkbox-group">
+                                    <input type="checkbox" name="isActive" value="true" class="checkbox-input" 
+                                           <%= adsConfig.native?.isActive ? 'checked' : '' %>>
+                                    <label class="form-label">Active</label>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="update-btn">
+                                <i class="fas fa-save"></i> Update Native Ad
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- App Open Ad -->
+                    <div class="ad-card">
+                        <div class="ad-type-header">
+                            <div class="ad-type-icon appopen-icon">
+                                <i class="fas fa-mobile-alt"></i>
+                            </div>
+                            <div>
+                                <h3 class="ad-type-title">App Open Ad</h3>
+                                <p class="ad-type-desc">App launch full screen ad</p>
+                            </div>
+                            <span class="status-badge <%= adsConfig.appopen?.isActive ? 'status-active' : 'status-inactive' %>">
+                                <%= adsConfig.appopen?.isActive ? 'Active' : 'Inactive' %>
+                            </span>
+                        </div>
+                        
+                        <form action="/ads-management/update" method="POST">
+                            <input type="hidden" name="adType" value="appopen">
+                            <input type="hidden" name="platform" value="android">
+                            
+                            <div class="form-group">
+                                <label class="form-label">Current App Open ID:</label>
+                                <div class="current-id">
+                                    <%= adsConfig.appopen?.id || 'Not set' %>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">New App Open Ad ID:</label>
+                                <input type="text" name="adId" class="form-input" 
+                                       placeholder="ca-app-pub-xxxxxxxxxxxxxxxx/xxxxxxxxxx"
+                                       value="<%= adsConfig.appopen?.id || '' %>">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Description:</label>
+                                <textarea name="description" class="form-input form-textarea" 
+                                          placeholder="App open ad shown when app launches"><%- adsConfig.appopen?.description || '' %></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <div class="checkbox-group">
+                                    <input type="checkbox" name="isActive" value="true" class="checkbox-input" 
+                                           <%= adsConfig.appopen?.isActive ? 'checked' : '' %>>
+                                    <label class="form-label">Active</label>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="update-btn">
+                                <i class="fas fa-save"></i> Update App Open Ad
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Reward Ad -->
+                    <div class="ad-card">
+                        <div class="ad-type-header">
+                            <div class="ad-type-icon reward-icon">
+                                <i class="fas fa-gift"></i>
+                            </div>
+                            <div>
+                                <h3 class="ad-type-title">Reward Ad</h3>
+                                <p class="ad-type-desc">Custom email creation reward</p>
+                            </div>
+                            <span class="status-badge <%= adsConfig.reward?.isActive ? 'status-active' : 'status-inactive' %>">
+                                <%= adsConfig.reward?.isActive ? 'Active' : 'Inactive' %>
+                            </span>
+                        </div>
+                        
+                        <form action="/ads-management/update" method="POST">
+                            <input type="hidden" name="adType" value="reward">
+                            <input type="hidden" name="platform" value="android">
+                            
+                            <div class="form-group">
+                                <label class="form-label">Current Reward ID:</label>
+                                <div class="current-id">
+                                    <%= adsConfig.reward?.id || 'Not set' %>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">New Reward Ad ID:</label>
+                                <input type="text" name="adId" class="form-input" 
+                                       placeholder="ca-app-pub-xxxxxxxxxxxxxxxx/xxxxxxxxxx"
+                                       value="<%= adsConfig.reward?.id || '' %>">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Description:</label>
+                                <textarea name="description" class="form-input form-textarea" 
+                                          placeholder="Reward ad for custom email creation"><%- adsConfig.reward?.description || '' %></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <div class="checkbox-group">
+                                    <input type="checkbox" name="isActive" value="true" class="checkbox-input" 
+                                           <%= adsConfig.reward?.isActive ? 'checked' : '' %>>
+                                    <label class="form-label">Active</label>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="update-btn">
+                                <i class="fas fa-save"></i> Update Reward Ad
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div id="ios-tab" class="tab-content" style="display: none;">
+                <div class="alert alert-info" style="background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb;">
+                    <i class="fas fa-info-circle"></i> iOS ads configuration will be available in future updates.
+                </div>
+            </div>
+
+            <div id="settings-tab" class="tab-content" style="display: none;">
+                <div class="ad-card">
+                    <h3><i class="fas fa-cog"></i> Global Ads Settings</h3>
+                    <form action="/ads-management/settings" method="POST">
+                        <div class="form-group">
+                            <label class="form-label">MongoDB Connection String:</label>
+                            <input type="text" name="mongoUri" class="form-input" 
+                                   placeholder="mongodb+srv://username:password@cluster.mongodb.net/database"
+                                   value="<%= mongoUri || '' %>">
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <input type="checkbox" name="adsEnabled" value="true" class="checkbox-input" 
+                                       <%= adsEnabled ? 'checked' : '' %>>
+                                <label class="form-label">Enable Ads Globally</label>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="update-btn">
+                            <i class="fas fa-save"></i> Save Settings
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.style.display = 'none';
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName + '-tab').style.display = 'block';
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>

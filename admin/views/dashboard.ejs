@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - TempMail Admin</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-envelope"></i> TempMail</h2>
+        </div>
+        <nav class="sidebar-menu">
+            <a href="/dashboard" class="menu-item active">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            <a href="/domains" class="menu-item">
+                <i class="fas fa-globe"></i> Manage Domains
+            </a>
+            <a href="/api-management" class="menu-item">
+                <i class="fas fa-key"></i> API Management
+            </a>
+            <a href="/ads-management" class="menu-item">
+                <i class="fas fa-mobile-alt"></i> Ads Management
+            </a>
+            <a href="/ads-settings" class="menu-item">
+                <i class="fas fa-cog"></i> Ads Settings
+            </a>
+            <a href="/app-updates" class="menu-item">
+                <i class="fas fa-sync-alt"></i> App Updates
+            </a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <header class="header">
+            <h1><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
+            <a href="/logout" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </header>
+
+        <div class="content">
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">2</div>
+                    <div class="stat-label">Active Domains</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">4</div>
+                    <div class="stat-label">API Endpoints</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">1</div>
+                    <div class="stat-label">Master API Key</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">Online</div>
+                    <div class="stat-label">System Status</div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card">
+                <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <a href="/domains" class="btn btn-primary">
+                        <i class="fas fa-globe"></i> Manage Domains
+                    </a>
+                    <a href="/api-management" class="btn btn-primary">
+                        <i class="fas fa-key"></i> API Management
+                    </a>
+                    <a href="/ads-settings" class="btn btn-primary">
+                        <i class="fas fa-cog"></i> Ads Settings
+                    </a>
+                    <a href="/app-updates" class="btn btn-primary">
+                        <i class="fas fa-sync-alt"></i> App Updates
+                    </a>
+                </div>
+            </div>
+
+            <!-- System Info -->
+            <div class="card">
+                <h3><i class="fas fa-info-circle"></i> System Information</h3>
+                <div class="table">
+                    <table class="table">
+                        <tr>
+                            <td><strong>Mail API Port</strong></td>
+                            <td>3001</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Admin Panel Port</strong></td>
+                            <td>3003</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Haraka Server</strong></td>
+                            <td>Running</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Redis Database</strong></td>
+                            <td>Connected</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
